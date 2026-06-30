@@ -1,0 +1,16 @@
+Read `AGENTS.md` and `docs/00_PROJECT_INDEX.md`.
+
+Then read `tasks/CURRENT_SLICE_PROMPT_TEMPLATE.md` and follow it exactly.
+
+Do not implement more than one TDD slice.
+
+
+
+--------------------------------------------------------
+
+
+Continue with the next incomplete slice.
+
+Read `tasks/CURRENT_SLICE_PROMPT_TEMPLATE.md` and follow it exactly.
+
+Do not implement more than one slice.

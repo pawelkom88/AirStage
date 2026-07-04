@@ -19,12 +19,51 @@ final class MenuModelTests: XCTestCase {
     func testDisabledActionsExposeReasonWhenUnavailable() {
         let model = MenuModel()
 
-        // shareWindowOrScreen is disabled until ScreenCaptureKit is wired in later slices.
         let windowAction = model.actions.first(where: { $0.id == .shareWindowOrScreen })
         XCTAssertNotNil(windowAction)
         if let action = windowAction, !action.isEnabled {
             XCTAssertNotNil(action.disabledReason, "Disabled actions must expose a reason")
         }
+    }
+
+    func testAddNoteIsEnabled() {
+        let model = MenuModel()
+        let action = model.actions.first(where: { $0.id == .addNote })
+        XCTAssertNotNil(action)
+        XCTAssertTrue(action!.isEnabled)
+        XCTAssertNil(action!.disabledReason)
+    }
+
+    func testShareImageIsEnabled() {
+        let model = MenuModel()
+        let action = model.actions.first(where: { $0.id == .shareImage })
+        XCTAssertNotNil(action)
+        XCTAssertTrue(action!.isEnabled)
+        XCTAssertNil(action!.disabledReason)
+    }
+
+    func testSettingsIsDisabledWithReason() {
+        let model = MenuModel()
+        let action = model.actions.first(where: { $0.id == .settings })
+        XCTAssertNotNil(action)
+        XCTAssertFalse(action!.isEnabled)
+        XCTAssertNotNil(action!.disabledReason)
+    }
+
+    func testShowPreviewIsEnabled() {
+        let model = MenuModel()
+        let action = model.actions.first(where: { $0.id == .showPreview })
+        XCTAssertNotNil(action)
+        XCTAssertTrue(action!.isEnabled)
+        XCTAssertNil(action!.disabledReason)
+    }
+
+    func testQuitIsEnabled() {
+        let model = MenuModel()
+        let action = model.actions.first(where: { $0.id == .quit })
+        XCTAssertNotNil(action)
+        XCTAssertTrue(action!.isEnabled)
+        XCTAssertNil(action!.disabledReason)
     }
 
     func testSelectingShowPreviewEmitsIntent() {
@@ -37,13 +76,83 @@ final class MenuModelTests: XCTestCase {
         XCTAssertEqual(emittedIntent, .showPreview)
     }
 
-    func testSelectingSettingsEmitsIntent() {
+    func testSelectingQuitEmitsIntent() {
         let model = MenuModel()
         var emittedIntent: MenuIntent?
         model.onIntent = { emittedIntent = $0 }
 
-        model.select(.settings)
+        model.select(.quit)
 
-        XCTAssertEqual(emittedIntent, .settings)
+        XCTAssertEqual(emittedIntent, .quit)
+    }
+
+    func testSelectingShareImageEmitsIntent() {
+        let model = MenuModel()
+        var emittedIntent: MenuIntent?
+        model.onIntent = { emittedIntent = $0 }
+
+        model.select(.shareImage)
+
+        XCTAssertEqual(emittedIntent, .shareImage)
+    }
+
+    func testDisabledActionsDoNotEmitIntents() {
+        let model = MenuModel()
+        let disabledIDs: [MenuActionID] = [
+            .shareWindowOrScreen,
+            .removeLayer, .camera, .settings
+        ]
+
+        for id in disabledIDs {
+            var emittedIntent: MenuIntent?
+            model.onIntent = { emittedIntent = $0 }
+            model.select(id)
+            XCTAssertNil(emittedIntent, "\(id) must not emit intent when disabled")
+        }
+    }
+
+    func testRemoveLayerMenuDisabledWhenNoLayersExist() {
+        let store = SceneStore()
+        let model = MenuModel(sceneStore: store)
+        
+        let action = model.actions.first(where: { $0.id == .removeLayer })
+        XCTAssertNotNil(action)
+        XCTAssertFalse(action!.isEnabled)
+        XCTAssertEqual(action!.disabledReason, "No layers in scene.")
+    }
+
+    func testRemoveLayerMenuListsCurrentLayers() {
+        let store = SceneStore()
+        let model = MenuModel(sceneStore: store)
+        
+        _ = store.addNote(title: "Sticky Note 1")
+        _ = store.addNote(title: "Sticky Note 2")
+        
+        let action = model.actions.first(where: { $0.id == .removeLayer })
+        XCTAssertNotNil(action)
+        XCTAssertTrue(action!.isEnabled)
+        XCTAssertNil(action!.disabledReason)
+        
+        let removable = model.removableLayers
+        XCTAssertEqual(removable.count, 2)
+        XCTAssertEqual(removable[0].title, "Sticky Note 1")
+        XCTAssertEqual(removable[1].title, "Sticky Note 2")
+    }
+
+    func testSelectingRemoveLayerMenuItemRemovesThatLayer() {
+        let store = SceneStore()
+        let model = MenuModel(sceneStore: store)
+        
+        let result = store.addNote(title: "Sticky Note")
+        guard let id = result.layerID else {
+            XCTFail("Failed to add layer")
+            return
+        }
+        
+        XCTAssertEqual(store.layers.count, 1)
+        
+        model.removeLayer(withID: id)
+        
+        XCTAssertEqual(store.layers.count, 0)
     }
 }

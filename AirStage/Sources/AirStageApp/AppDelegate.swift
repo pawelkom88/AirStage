@@ -4,8 +4,11 @@ import AirStage
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem?
-    private let menuModel = MenuModel()
+    private let sceneStore = SceneStore()
+    private lazy var menuModel = MenuModel(sceneStore: sceneStore)
     private var previewWindowController: PreviewWindowController?
+    private let settingsStore = SettingsStore()
+    private var settingsWindowController: SettingsWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         LaunchDiagnostics.logStartup()
@@ -24,22 +27,67 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch intent {
         case .showPreview:
             showPreview()
+        case .addNote:
+            _ = sceneStore.addNote(
+                title: "Sticky Note",
+                position: CGPoint(x: 320, y: 240),
+                size: CGSize(width: 150, height: 150)
+            )
+            showPreview()
+        case .shareImage:
+            presentImagePicker()
         case .settings:
             AppLog.menu.info("Settings requested")
-            // Settings window added in Slice 16.
+            showSettings()
+        case .quit:
+            AppLog.app.info("Quit requested")
+            NSApplication.shared.terminate(nil)
         default:
             break
+        }
+    }
+
+    private func presentImagePicker() {
+        let picker = NSOpenPanelImageSourcePicker()
+        picker.pickImage { [weak self] url in
+            guard let self = self, let url = url else { return }
+            let importer = ImageImporter(store: self.sceneStore)
+            let result = importer.importImage(from: url)
+            switch result {
+            case .success:
+                self.showPreview()
+            case .failure(let error):
+                DispatchQueue.main.async {
+                    let alert = NSAlert()
+                    alert.messageText = "Cannot Add Image"
+                    alert.informativeText = error.errorDescription ?? "An unknown error occurred."
+                    alert.alertStyle = .warning
+                    alert.runModal()
+                }
+            }
         }
     }
 
     private func showPreview() {
         if previewWindowController == nil {
             previewWindowController = PreviewWindowController(
-                permissionService: AVCameraPermissionService()
+                permissionService: AVCameraPermissionService(),
+                sceneStore: sceneStore
             )
+            previewWindowController?.onAddImage = { [weak self] in
+                self?.presentImagePicker()
+            }
         }
         previewWindowController?.showWindow(nil)
         previewWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
+    private func showSettings() {
+        if settingsWindowController == nil {
+            settingsWindowController = SettingsWindowController(settingsStore: settingsStore)
+        }
+        settingsWindowController?.showWindow(nil)
+        settingsWindowController?.window?.makeKeyAndOrderFront(nil)
     }
 
     // MARK: - Menu construction
@@ -47,6 +95,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func buildNSMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
+        menu.delegate = self
+        
+        rebuildMenu(menu)
+        
+        return menu
+    }
+
+    private func rebuildMenu(_ menu: NSMenu) {
+        menu.removeAllItems()
 
         // Title row
         let titleItem = NSMenuItem(title: "AirStage", action: nil, keyEquivalent: "")
@@ -56,23 +113,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         for action in menuModel.actions {
             switch action.id {
-            case .removeLayer, .camera:
+            case .removeLayer:
+                let item = makeItem(action)
+                let sub = NSMenu()
+                sub.autoenablesItems = false
+                
+                let layers = menuModel.removableLayers
+                if layers.isEmpty {
+                    let emptyItem = NSMenuItem(title: "No layers in scene.", action: nil, keyEquivalent: "")
+                    emptyItem.isEnabled = false
+                    sub.addItem(emptyItem)
+                } else {
+                    for layer in layers {
+                        let subItem = NSMenuItem(
+                            title: layer.displayTitle,
+                            action: #selector(handleRemoveLayerAction(_:)),
+                            keyEquivalent: ""
+                        )
+                        subItem.representedObject = layer.id
+                        sub.addItem(subItem)
+                    }
+                }
+                
+                item.submenu = sub
+                menu.addItem(item)
+
+            case .camera:
                 let item = makeItem(action)
                 let sub = NSMenu()
                 item.submenu = sub
                 menu.addItem(item)
+
             case .settings:
                 menu.addItem(.separator())
                 menu.addItem(makeItem(action))
+
             case .quit:
                 menu.addItem(.separator())
                 menu.addItem(makeItem(action))
+
             default:
                 menu.addItem(makeItem(action))
             }
         }
-
-        return menu
     }
 
     private func makeItem(_ action: MenuAction) -> NSMenuItem {
@@ -94,5 +177,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppLog.menu.info("Menu action selected action=\(raw, privacy: .public)")
 
         menuModel.select(id)
+    }
+
+    @objc private func handleRemoveLayerAction(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? UUID else { return }
+        menuModel.removeLayer(withID: id)
+    }
+}
+
+extension AppDelegate: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        rebuildMenu(menu)
     }
 }

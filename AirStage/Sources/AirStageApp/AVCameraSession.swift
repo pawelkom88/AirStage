@@ -5,44 +5,58 @@ import AirStage
 final class AVCameraSession: CameraSession {
 
     private let captureSession = AVCaptureSession()
+    private var hasStarted = false
 
     func start(completion: @escaping (String?) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
-            self.captureSession.beginConfiguration()
-            self.captureSession.sessionPreset = .high
 
-            guard let device = AVCaptureDevice.default(for: .video) else {
+            guard !hasStarted else {
                 DispatchQueue.main.async {
-                    completion("No camera device found.")
+                    completion("Camera session already started.")
                 }
                 return
             }
 
-            do {
-                let input = try AVCaptureDeviceInput(device: device)
-                if self.captureSession.canAddInput(input) {
-                    self.captureSession.addInput(input)
+            captureSession.beginConfiguration()
+            captureSession.sessionPreset = .high
+
+            var errorToReport: String?
+
+            if let device = AVCaptureDevice.default(for: .video) {
+                do {
+                    let input = try AVCaptureDeviceInput(device: device)
+                    if captureSession.canAddInput(input) {
+                        captureSession.addInput(input)
+                    } else {
+                        errorToReport = "Cannot add camera input."
+                    }
+                } catch {
+                    errorToReport = error.localizedDescription
                 }
-            } catch {
-                self.captureSession.commitConfiguration()
-                DispatchQueue.main.async {
-                    completion(error.localizedDescription)
-                }
-                return
+            } else {
+                errorToReport = "No camera device found."
             }
 
-            self.captureSession.commitConfiguration()
-            self.captureSession.startRunning()
+            captureSession.commitConfiguration()
 
-            DispatchQueue.main.async {
-                AppLog.camera.info("Camera session starting device=\(device.localizedName, privacy: .public)")
-                completion(nil)
+            if let error = errorToReport {
+                DispatchQueue.main.async {
+                    completion(error)
+                }
+            } else {
+                hasStarted = true
+                captureSession.startRunning()
+                DispatchQueue.main.async {
+                    AppLog.camera.info("Camera session started")
+                    completion(nil)
+                }
             }
         }
     }
 
     func stop() {
+        hasStarted = false
         captureSession.stopRunning()
     }
 

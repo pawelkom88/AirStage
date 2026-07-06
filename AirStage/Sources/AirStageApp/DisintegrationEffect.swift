@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct DisintegrationEffect: ViewModifier {
     var isDeleted: Bool
+    var targetOffset: CGSize?
     
     @State private var particles: [Particle] = []
     
@@ -36,8 +37,13 @@ public struct DisintegrationEffect: ViewModifier {
                 createParticles()
                 withAnimation(.easeOut(duration: 1.5)) {
                     for i in 0..<particles.count {
-                        particles[i].xOffset += CGFloat.random(in: -150...150)
-                        particles[i].yOffset += CGFloat.random(in: -150...150)
+                        if let target = targetOffset {
+                            particles[i].xOffset += target.width + CGFloat.random(in: -50...50)
+                            particles[i].yOffset += target.height + CGFloat.random(in: -50...50)
+                        } else {
+                            particles[i].xOffset += CGFloat.random(in: -150...150)
+                            particles[i].yOffset += CGFloat.random(in: -150...150)
+                        }
                         particles[i].opacity = 0
                         particles[i].scale = 0.1
                     }
@@ -65,7 +71,7 @@ public struct DisintegrationEffect: ViewModifier {
 }
 
 public extension View {
-    func disintegrationEffect(isDeleted: Bool) -> some View {
-        self.modifier(DisintegrationEffect(isDeleted: isDeleted))
+    func disintegrationEffect(isDeleted: Bool, targetOffset: CGSize? = nil) -> some View {
+        self.modifier(DisintegrationEffect(isDeleted: isDeleted, targetOffset: targetOffset))
     }
 }

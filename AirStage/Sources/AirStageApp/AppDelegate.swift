@@ -58,6 +58,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch intent {
         case .showPreview:
             showPreview()
+        case .presenterShelf:
+            showPreview()
+            previewWindowController?.togglePresenterShelf()
         case .addNote:
             _ = sceneStore.addNote(
                 title: "Sticky Note",

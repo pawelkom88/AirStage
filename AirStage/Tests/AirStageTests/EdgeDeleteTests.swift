@@ -257,6 +257,29 @@ final class EdgeDeleteTests: XCTestCase {
         vm.updateEdgeDeleteForDraggedLayer(layer)
         XCTAssertEqual(vm.edgeDeleteState, .idle, "Should gate edge delete for tutorial cards")
     }
+
+    func testBadgePositioningUsesDraggedCardFrameMidYClamped() {
+        let sceneBounds = CGRect(x: 0, y: 0, width: 800, height: 600)
+        
+        // Unclamped scenario
+        let cardFrameUnclamped = CGRect(x: 40, y: 200, width: 120, height: 120) // midY = 260
+        let posUnclampedLeft = EdgeDeleteState.badgePosition(side: .left, cardFrame: cardFrameUnclamped, sceneBounds: sceneBounds)
+        XCTAssertEqual(posUnclampedLeft.y, 260, "Should use draggedCardFrame.midY")
+        XCTAssertEqual(posUnclampedLeft.x, sceneBounds.minX + 56)
+        
+        let posUnclampedRight = EdgeDeleteState.badgePosition(side: .right, cardFrame: cardFrameUnclamped, sceneBounds: sceneBounds)
+        XCTAssertEqual(posUnclampedRight.x, sceneBounds.maxX - 56)
+        
+        // Clamped top scenario
+        let cardFrameTop = CGRect(x: 40, y: -50, width: 120, height: 120) // midY = 10
+        let posTop = EdgeDeleteState.badgePosition(side: .left, cardFrame: cardFrameTop, sceneBounds: sceneBounds)
+        XCTAssertEqual(posTop.y, 60, "Should clamp to sceneBounds.minY + 60")
+        
+        // Clamped bottom scenario
+        let cardFrameBottom = CGRect(x: 40, y: 600, width: 120, height: 120) // midY = 660
+        let posBottom = EdgeDeleteState.badgePosition(side: .left, cardFrame: cardFrameBottom, sceneBounds: sceneBounds)
+        XCTAssertEqual(posBottom.y, 540, "Should clamp to sceneBounds.maxY - 60")
+    }
 }
 
 private extension EdgeDeleteState {

@@ -18,6 +18,7 @@ public final class MenuModel {
         }
 
         return [
+            MenuAction(id: .presenterShelf,     title: "Presenter Shelf"),
             MenuAction(id: .addNote,            title: "Add Note"),
             MenuAction(id: .shareImage,         title: "Share Image…"),
             MenuAction(id: .shareWindowOrScreen,
@@ -65,6 +66,7 @@ public final class MenuModel {
 
         let intent: MenuIntent
         switch id {
+        case .presenterShelf:       intent = .presenterShelf
         case .showPreview:          intent = .showPreview
         case .settings:             intent = .settings
         case .addNote:              intent = .addNote

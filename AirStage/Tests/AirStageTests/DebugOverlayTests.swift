@@ -1,6 +1,7 @@
 import XCTest
 @testable import AirStage
 
+@MainActor
 final class DebugOverlayTests: XCTestCase {
 
     // MARK: - Visibility

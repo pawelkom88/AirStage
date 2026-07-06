@@ -1,5 +1,6 @@
 /// Stable identifiers for every menu bar action.
 public enum MenuActionID: String, Equatable, CaseIterable {
+    case presenterShelf
     case addNote
     case shareImage
     case shareWindowOrScreen

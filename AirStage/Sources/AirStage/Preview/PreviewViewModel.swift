@@ -47,6 +47,7 @@ public final class PreviewViewModel: ObservableObject {
     @Published public var vanishHoldingLayerIDs: Set<UUID> = []
     @Published public var disintegratedLayerIDs: Set<UUID> = []
     @Published public private(set) var edgeDeleteState: EdgeDeleteState = .idle
+    @Published public var draggedCardFrame: CGRect?
     private let edgeDeleteController = EdgeDeleteController()
     private var vanishHoldTimers: [UUID: Timer] = [:]
 
@@ -71,7 +72,10 @@ public final class PreviewViewModel: ObservableObject {
     private static let onboardingCompletedKey = "hasCompletedOnboarding"
     @Published public private(set) var onboardingStep: OnboardingStep
     private var onboardingMachine: OnboardingStateMachine
+    
+    @Published public var presenterShelfStore: PresenterShelfStore
 
+    @MainActor
     public init(
         permissionService: CameraPermissionService,
         cameraSession: CameraSession? = nil,
@@ -96,6 +100,7 @@ public final class PreviewViewModel: ObservableObject {
         let machine = OnboardingStateMachine(hasCompleted: hasCompleted)
         self.onboardingMachine = machine
         self.onboardingStep = machine.currentStep
+        self.presenterShelfStore = PresenterShelfStore()
 
         if let store = sceneStore {
             self.gestureLayerController = GestureLayerController(sceneStore: store, sceneBounds: canvasGeometry.sceneBounds)
@@ -834,6 +839,7 @@ public final class PreviewViewModel: ObservableObject {
             width: layer.size.width,
             height: layer.size.height
         )
+        self.draggedCardFrame = frame
 
         edgeDeleteController.updateDraggedLayer(
             id: layer.id,
@@ -864,6 +870,16 @@ public final class PreviewViewModel: ObservableObject {
             self.disintegratedLayerIDs.remove(layerID)
             self.edgeDeleteController.cancel()
         }
+    }
+
+    public func disintegrationTargetOffset(for layer: SceneLayer) -> CGSize? {
+        guard case .disintegrating(let side, let layerID) = edgeDeleteState, layerID == layer.id else {
+            return nil
+        }
+        guard let cardFrame = draggedCardFrame else { return nil }
+        
+        let badgePos = EdgeDeleteState.badgePosition(side: side, cardFrame: cardFrame, sceneBounds: sceneBounds)
+        return CGSize(width: badgePos.x - layer.position.x, height: badgePos.y - layer.position.y)
     }
 
     @MainActor
@@ -918,6 +934,55 @@ public final class PreviewViewModel: ObservableObject {
                 handleHitRadius: dynamicRadius,
                 dragSafeRect: dragSafeRect,
                 interactionModeDescription: "none"
+            )
+        }
+    }
+    
+    // MARK: - Presenter Shelf
+    
+    @MainActor
+    public func togglePresenterShelf() {
+        guard onboardingStep == .completed else { return }
+        presenterShelfStore.toggle()
+    }
+
+    @MainActor
+    public func hidePresenterShelf() {
+        presenterShelfStore.hide()
+    }
+
+    @MainActor
+    public func presentSelectedShelfItem() {
+        guard onboardingStep == .completed else { return }
+        guard let item = presenterShelfStore.selectedItem else { return }
+
+        presenterShelfStore.hide()
+        createSceneLayer(from: item)
+    }
+    
+    @MainActor
+    private func createSceneLayer(from item: PresenterShelfItem) {
+        guard let sceneStore else { return }
+
+        let targetPosition = CGPoint(x: sceneBounds.midX, y: sceneBounds.midY)
+
+        switch item.kind {
+        case .screenshot:
+            if let url = item.fileURL {
+                _ = sceneStore.addImage(title: item.title, imageURL: url, position: targetPosition)
+            } else {
+                _ = sceneStore.addNote(
+                    title: item.title,
+                    position: targetPosition,
+                    size: CGSize(width: 320, height: 200)
+                )
+            }
+
+        default:
+            _ = sceneStore.addNote(
+                title: item.title,
+                position: targetPosition,
+                size: CGSize(width: 320, height: 200)
             )
         }
     }

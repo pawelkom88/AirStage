@@ -1239,3 +1239,54 @@ Manual Notes:
 
 Assumptions/decisions:
 - The `InteractionHitPolicy` limits handle zones based on `min(rect.width, rect.height)` ensuring large/wide cards do not monopolize gesture hits.
+
+### Slice — Presenter Shelf Primitives & Data Layer
+
+Status: Complete — 2026-07-06
+
+Files changed:
+- `AirStage/Sources/AirStage/PresenterShelf/PresenterShelfModel.swift` [NEW] — Defines `PresenterShelfItem`, `ShelfCategory`, and static mock data.
+- `AirStage/Sources/AirStage/PresenterShelf/PresenterShelfStore.swift` [NEW] — Manages categories, active items, and shelf toggle state.
+- `AirStage/Sources/AirStage/PresenterShelf/PresenterShelfView.swift` [NEW] — Implements `LiquidGlassPanel`, `LiquidGlassCard`, `LiquidGlassSegment`, and the main shelf overlay.
+- `AirStage/Sources/AirStage/Preview/PreviewViewModel.swift` — Added `@MainActor` to initializer, wired `presenterShelfStore` and commands.
+- `AirStage/Sources/AirStageApp/PreviewView.swift` — Displayed `PresenterShelfView` via ZStack overlay, bound shortcut `Cmd+Shift+F`.
+- `AirStage/Sources/AirStage/Menu/MenuModel.swift` — Added `togglePresenterShelf` intent.
+- `AirStage/Sources/AirStageApp/AppDelegate.swift` — Intercepted shelf toggle intent to open preview window and toggle the shelf.
+- `AirStage/Tests/AirStageTests/*` — Added `@MainActor` to 6 test suites importing `PreviewViewModel` to fix `ActorIsolatedCall` build errors.
+
+Tests added:
+- None directly for Presenter Shelf yet (UI/Model foundation). Existing tests fixed for `@MainActor`.
+
+Commands run:
+- `swift test` → 162 tests passed, 0 failures
+
+Debug logs added:
+- `AppLog.scene.info("Presenter Shelf toggled visibility=\(visible)")`
+
+Assumptions/decisions:
+- Liquid glass primitives are modular and reusable.
+- `@MainActor` applied to `PreviewViewModel` and test cases ensuring safe UI state mutation concurrency.
+
+### Slice — Edge Delete Badge & Disintegration Bias
+
+Status: Complete — 2026-07-06
+
+Files changed:
+- `AirStage/Sources/AirStage/Preview/PreviewViewModel.swift` — Added `draggedCardFrame` to track dragged layer bounds. Added `disintegrationTargetOffset(for:)` logic to compute bias for particles.
+- `AirStage/Sources/AirStage/Preview/EdgeDeleteState.swift` — Added `isHoveringOnly` property. Extracted `badgePosition(side:cardFrame:sceneBounds:)` clamped badge tracking.
+- `AirStage/Sources/AirStageApp/PreviewView.swift` — Replaced full-height pill `EdgeDeleteZoneView` with compact circular `EdgeDeleteBadge` utilizing `#available(macOS 26, iOS 26, *)` `GlassEffectContainer` APIs. Passed target offset to `disintegrationEffect` modifier across all card views.
+- `AirStage/Sources/AirStageApp/DisintegrationEffect.swift` — Enhanced particle seed generation loop to take optional `targetOffset: CGSize?` to bias the deletion direction towards the trash icon.
+- `AirStage/Tests/AirStageTests/EdgeDeleteTests.swift` — Added `testBadgePositioningUsesDraggedCardFrameMidYClamped` verifying clamped badge positioning tracking the card's center y-axis.
+
+Tests added:
+- `testBadgePositioningUsesDraggedCardFrameMidYClamped` ✓
+
+Commands run:
+- `swift test` → 163 tests passed, 0 failures
+
+Debug logs added:
+- None directly in this slice (existing logs utilized).
+
+Assumptions/decisions:
+- The fallback `.ultraThinMaterial` pill is retained inside `#else` availability checks for macOS versions below 26.
+- Particles drift linearly toward the dynamic trash icon offset rather than symmetrically spreading in -150...150 range.

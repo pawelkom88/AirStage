@@ -2,6 +2,7 @@ import XCTest
 import CoreGraphics
 @testable import AirStage
 
+@MainActor
 final class SceneGeometryTests: XCTestCase {
     func testClampPositionKeepsLayerPartiallyVisible() {
         let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)

@@ -44,4 +44,19 @@ public extension EdgeDeleteState {
         if case .disintegrating = self { return true }
         return false
     }
+
+    var isHoveringOnly: Bool {
+        if case .hovering = self { return true }
+        return false
+    }
+
+    static func badgePosition(side: EdgeDeleteSide, cardFrame: CGRect, sceneBounds: CGRect) -> CGPoint {
+        let y = min(max(cardFrame.midY, sceneBounds.minY + 60), sceneBounds.maxY - 60)
+        switch side {
+        case .left:
+            return CGPoint(x: sceneBounds.minX + 56, y: y)
+        case .right:
+            return CGPoint(x: sceneBounds.maxX - 56, y: y)
+        }
+    }
 }

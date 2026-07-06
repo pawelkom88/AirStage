@@ -93,6 +93,10 @@ final class PreviewWindowController: NSWindowController {
             break
         }
     }
+    
+    func togglePresenterShelf() {
+        viewModel.togglePresenterShelf()
+    }
 
     // MARK: - Private
 

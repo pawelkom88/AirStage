@@ -2,6 +2,7 @@ import XCTest
 import Foundation
 @testable import AirStage
 
+@MainActor
 final class IntegrationRegressionTests: XCTestCase {
 
     override func setUp() {

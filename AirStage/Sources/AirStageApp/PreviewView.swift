@@ -101,7 +101,7 @@ struct StickyNoteView: View {
         .onTapGesture {
             sceneStore.selectLayer(layer.id)
         }
-        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id))
+        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id), targetOffset: viewModel.disintegrationTargetOffset(for: layer))
     }
 }
 
@@ -203,7 +203,7 @@ struct ImageCardView: View {
         .onTapGesture {
             sceneStore.selectLayer(layer.id)
         }
-        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id))
+        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id), targetOffset: viewModel.disintegrationTargetOffset(for: layer))
     }
 }
 
@@ -290,7 +290,7 @@ struct DefaultCardView: View {
         .onTapGesture {
             sceneStore.selectLayer(layer.id)
         }
-        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id))
+        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id), targetOffset: viewModel.disintegrationTargetOffset(for: layer))
     }
 }
 
@@ -554,7 +554,7 @@ struct TutorialSceneCardView: View {
         .onTapGesture {
             sceneStore.selectLayer(layer.id)
         }
-        .disintegrationEffect(isDeleted: snapEffect)
+        .disintegrationEffect(isDeleted: snapEffect, targetOffset: viewModel.disintegrationTargetOffset(for: layer))
         .onChange(of: viewModel.onboardingStep) { _, newStep in
             if newStep == .virtualCameraPrompt {
                 snapEffect = true
@@ -805,14 +805,20 @@ struct PreviewView: View {
                 OnboardingSuccessToast(step: viewModel.onboardingStep, viewModel: viewModel)
             }
 
-            if let side = viewModel.edgeDeleteState.side {
-                EdgeDeleteZoneView(
-                    side: side,
-                    state: viewModel.edgeDeleteState
-                )
-                .position(edgeDeleteZonePosition(side: side, sceneBounds: viewModel.sceneBounds))
-                .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                .zIndex(850)
+            if let side = viewModel.edgeDeleteState.side, let frame = viewModel.draggedCardFrame {
+                if #available(macOS 26, iOS 26, *) {
+                    EdgeDeleteBadge(side: side, state: viewModel.edgeDeleteState)
+                        .position(EdgeDeleteState.badgePosition(side: side, cardFrame: frame, sceneBounds: viewModel.sceneBounds))
+                        .zIndex(850)
+                } else {
+                    EdgeDeleteZoneView(
+                        side: side,
+                        state: viewModel.edgeDeleteState
+                    )
+                    .position(edgeDeleteZonePosition(side: side, sceneBounds: viewModel.sceneBounds))
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    .zIndex(850)
+                }
             }
 
             if viewModel.isDebugOverlayVisible {
@@ -852,12 +858,43 @@ struct PreviewView: View {
             }
             .zIndex(1000)
 
+            // Presenter Shelf Overlay
+            if viewModel.presenterShelfStore.isVisible {
+                PresenterShelfView(
+                    store: viewModel.presenterShelfStore,
+                    onPresent: { viewModel.presentSelectedShelfItem() },
+                    onClose: { viewModel.hidePresenterShelf() }
+                )
+                .zIndex(950)
+            }
+            
+            // Invisible toggle for Presenter Shelf
+            Button("") {
+                viewModel.togglePresenterShelf()
+            }
+            .keyboardShortcut("f", modifiers: [.command, .shift])
+            .opacity(0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+
             // Quick-Add Toolbar Overlay (only when onboarding is completed or welcome card is not blocking)
             if viewModel.shouldShowQuickAddToolbar {
                 VStack {
                     Spacer()
                     
                     HStack(spacing: 12) {
+                        Button(action: { viewModel.togglePresenterShelf() }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "rectangle.stack")
+                                Text("Shelf")
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.15))
+                        .cornerRadius(6)
+                        
                         Button(action: { viewModel.quickAddNote() }) {
                             HStack(spacing: 4) {
                                 Image(systemName: "plus")
@@ -962,6 +999,7 @@ struct PreviewView: View {
                 }
             }
         }
+        .animation(.smooth(duration: 0.38), value: viewModel.presenterShelfStore.isVisible)
         .contentShape(Rectangle())
         .onHover { hovered in
             viewModel.setHovered(hovered)
@@ -992,12 +1030,64 @@ struct PreviewView: View {
     }
 
     private func edgeDeleteZonePosition(side: EdgeDeleteSide, sceneBounds: CGRect) -> CGPoint {
+        let y = sceneBounds.midY
         switch side {
         case .left:
-            return CGPoint(x: sceneBounds.minX + 42, y: sceneBounds.midY)
+            return CGPoint(x: sceneBounds.minX + 48, y: y)
         case .right:
-            return CGPoint(x: sceneBounds.maxX - 42, y: sceneBounds.midY)
+            return CGPoint(x: sceneBounds.maxX - 48, y: y)
         }
+    }
+}
+
+@available(macOS 26, iOS 26, *)
+struct EdgeDeleteBadge: View {
+    let side: EdgeDeleteSide
+    let state: EdgeDeleteState
+    @Namespace private var glassNamespace
+
+    private var isArmed: Bool {
+        if case .armed = state { return true }
+        if case .disintegrating = state { return true }
+        return false
+    }
+
+    private var isVisible: Bool {
+        state != .idle
+    }
+
+    @State private var pulse = false
+
+    var body: some View {
+        GlassEffectContainer(spacing: 16) {
+            Image(systemName: isArmed ? "trash.fill" : "trash")
+                .font(.system(size: isArmed ? 26 : 22, weight: .semibold))
+                .foregroundStyle(.white)
+                .contentTransition(.symbolEffect(.replace))
+                .symbolEffect(.bounce, value: isArmed)
+                .frame(width: isArmed ? 104 : 88, height: isArmed ? 104 : 88)
+                .glassEffect(
+                    isArmed
+                        ? .regular.tint(.red.opacity(0.32)).interactive()
+                        : .regular.interactive(),
+                    in: Circle()
+                )
+                .glassEffectID("edgeDeleteBadge", in: glassNamespace)
+        }
+        .scaleEffect(isVisible ? 1.0 : 0.6)
+        .opacity(isVisible ? 1.0 : 0.0)
+        .animation(.spring(response: 0.42, dampingFraction: 0.74), value: isArmed)
+        .animation(.spring(response: 0.38, dampingFraction: 0.8), value: isVisible)
+        .scaleEffect(state.isHoveringOnly ? (pulse ? 1.0 : 0.94) : 1.0)
+        .animation(
+            state.isHoveringOnly
+                ? .easeInOut(duration: 1.3).repeatForever(autoreverses: true)
+                : .default,
+            value: pulse
+        )
+        .onAppear { pulse = true }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 

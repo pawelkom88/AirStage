@@ -2,6 +2,7 @@ import XCTest
 import Foundation
 @testable import AirStage
 
+@MainActor
 final class ViewModelVirtualCameraTests: XCTestCase {
 
     override func setUp() {

@@ -99,7 +99,6 @@ final class MenuModelTests: XCTestCase {
     func testDisabledActionsDoNotEmitIntents() {
         let model = MenuModel()
         let disabledIDs: [MenuActionID] = [
-            .shareWindowOrScreen,
             .removeLayer, .camera, .settings
         ]
 
@@ -154,5 +153,40 @@ final class MenuModelTests: XCTestCase {
         model.removeLayer(withID: id)
         
         XCTAssertEqual(store.layers.count, 0)
+    }
+
+    func testMenuOnlyShowsQuitBeforeOnboardingCompletes() {
+        let model = MenuModel(
+            sceneStore: SceneStore(),
+            isOnboardingCompleted: { false }
+        )
+
+        let actions = model.actions
+
+        XCTAssertEqual(actions.map(\.id), [.quit])
+        XCTAssertTrue(actions.first?.isEnabled == true)
+    }
+
+    func testMenuShowsNormalActionsAfterOnboardingCompletes() {
+        let model = MenuModel(
+            sceneStore: SceneStore(),
+            isOnboardingCompleted: { true }
+        )
+
+        let ids = model.actions.map(\.id)
+
+        XCTAssertTrue(ids.contains(.addNote))
+        XCTAssertTrue(ids.contains(.shareImage))
+        XCTAssertTrue(ids.contains(.shareWindowOrScreen))
+        XCTAssertTrue(ids.contains(.showPreview))
+        XCTAssertTrue(ids.contains(.quit))
+    }
+
+    func testQuitIsAlwaysEnabled() {
+        let locked = MenuModel(sceneStore: SceneStore(), isOnboardingCompleted: { false })
+        let unlocked = MenuModel(sceneStore: SceneStore(), isOnboardingCompleted: { true })
+
+        XCTAssertTrue(locked.actions.first(where: { $0.id == .quit })?.isEnabled == true)
+        XCTAssertTrue(unlocked.actions.first(where: { $0.id == .quit })?.isEnabled == true)
     }
 }

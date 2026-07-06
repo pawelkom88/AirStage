@@ -2,9 +2,11 @@ import SwiftUI
 
 public struct SettingsView: View {
     @ObservedObject var store: SettingsStore
+    @ObservedObject var cameraManager: VirtualCameraManager
 
-    public init(store: SettingsStore) {
+    public init(store: SettingsStore, cameraManager: VirtualCameraManager) {
         self.store = store
+        self.cameraManager = cameraManager
     }
 
     public var body: some View {
@@ -50,6 +52,21 @@ public struct SettingsView: View {
                 .toggleStyle(.switch)
             }
 
+            Section("Virtual Camera") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(cameraManager.status.userFriendlyMessage)
+                        .font(.system(.body, design: .rounded))
+                        .foregroundColor(.secondary)
+                    
+                    if cameraManager.status == .notInstalled {
+                        Button("Install Virtual Camera") {
+                            cameraManager.requestInstall()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+            }
+
             Section("Onboarding") {
                 Button("Reset Onboarding") {
                     store.resetOnboarding()
@@ -58,6 +75,6 @@ public struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 400, height: 350)
+        .frame(width: 400, height: 380)
     }
 }

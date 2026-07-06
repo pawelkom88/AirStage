@@ -15,20 +15,25 @@ final class PreviewWindowController: NSWindowController {
 
     var onAddImage: (() -> Void)?
 
-    init(permissionService: RequestableCameraPermissionService, sceneStore: SceneStore) {
+    init(permissionService: RequestableCameraPermissionService, sceneStore: SceneStore, settingsStore: SettingsStore, virtualCameraManager: VirtualCameraManager) {
         self.sceneStore = sceneStore
         let session = AVCameraSession()
         self.cameraSession = session
-        self.viewModel = PreviewViewModel(permissionService: permissionService, cameraSession: session, sceneStore: sceneStore)
+        self.viewModel = PreviewViewModel(permissionService: permissionService, cameraSession: session, sceneStore: sceneStore, settingsStore: settingsStore, virtualCameraManager: virtualCameraManager)
 
         let window = PreviewWindow(
             contentRect: NSRect(x: 0, y: 0, width: 640, height: 480),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.borderless, .resizable],
             backing: .buffered,
             defer: false
         )
         window.title = "AirStage Preview"
         window.center()
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = true
+        window.isMovableByWindowBackground = true
+        window.level = .floating
 
         super.init(window: window)
 
@@ -59,6 +64,8 @@ final class PreviewWindowController: NSWindowController {
         let container = NSView()
         container.wantsLayer = true
         container.layer?.backgroundColor = NSColor.black.cgColor
+        container.layer?.cornerRadius = 16
+        container.layer?.masksToBounds = true
         window.contentView = container
         self.containerView = container
 
@@ -135,6 +142,12 @@ final class PreviewWindowController: NSWindowController {
         let layer = AVCaptureVideoPreviewLayer(session: cameraSession.session)
         layer.videoGravity = .resizeAspectFill
         layer.frame = container.bounds
+        if let connection = layer.connection {
+            if connection.isVideoMirroringSupported {
+                connection.automaticallyAdjustsVideoMirroring = false
+                connection.isVideoMirrored = true
+            }
+        }
         container.layer?.addSublayer(layer)
         previewLayer = layer
 

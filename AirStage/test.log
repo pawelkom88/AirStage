@@ -1,0 +1,328 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write swift-version--58304C5D6DBC2206.txt
+Build complete! (0.15s)
+Test Suite 'All tests' started at 2026-07-05 19:51:44.546.
+Test Suite 'AirStagePackageTests.xctest' started at 2026-07-05 19:51:44.547.
+Test Suite 'AddNoteTests' started at 2026-07-05 19:51:44.547.
+Test Case '-[AirStageTests.AddNoteTests testNewNoteSpawnsInsidePreviewBounds]' started.
+Test Case '-[AirStageTests.AddNoteTests testNewNoteSpawnsInsidePreviewBounds]' passed (0.001 seconds).
+Test Case '-[AirStageTests.AddNoteTests testSelectingAddNoteEmitsIntentAndAddsNoteToStore]' started.
+Test Case '-[AirStageTests.AddNoteTests testSelectingAddNoteEmitsIntentAndAddsNoteToStore]' passed (0.001 seconds).
+Test Suite 'AddNoteTests' passed at 2026-07-05 19:51:44.549.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'AppLogTests' started at 2026-07-05 19:51:44.549.
+Test Case '-[AirStageTests.AppLogTests testAppLogCategoriesExist]' started.
+Test Case '-[AirStageTests.AppLogTests testAppLogCategoriesExist]' passed (0.000 seconds).
+Test Case '-[AirStageTests.AppLogTests testLaunchDiagnosticsCanBeCreated]' started.
+Test Case '-[AirStageTests.AppLogTests testLaunchDiagnosticsCanBeCreated]' passed (0.000 seconds).
+Test Suite 'AppLogTests' passed at 2026-07-05 19:51:44.550.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'CameraSessionTests' started at 2026-07-05 19:51:44.550.
+Test Case '-[AirStageTests.CameraSessionTests testCameraSessionFailureTransitionsToFailedState]' started.
+Test Case '-[AirStageTests.CameraSessionTests testCameraSessionFailureTransitionsToFailedState]' passed (0.001 seconds).
+Test Case '-[AirStageTests.CameraSessionTests testDeniedPermissionDoesNotStartCameraSession]' started.
+Test Case '-[AirStageTests.CameraSessionTests testDeniedPermissionDoesNotStartCameraSession]' passed (0.000 seconds).
+Test Case '-[AirStageTests.CameraSessionTests testDeniedPermissionShowsRecoveryMessage]' started.
+Test Case '-[AirStageTests.CameraSessionTests testDeniedPermissionShowsRecoveryMessage]' passed (0.000 seconds).
+Test Case '-[AirStageTests.CameraSessionTests testGrantedPermissionStartsCameraSession]' started.
+Test Case '-[AirStageTests.CameraSessionTests testGrantedPermissionStartsCameraSession]' passed (0.000 seconds).
+Test Case '-[AirStageTests.CameraSessionTests testRequestingCameraPermissionTransitionsToGrantedState]' started.
+Test Case '-[AirStageTests.CameraSessionTests testRequestingCameraPermissionTransitionsToGrantedState]' passed (0.000 seconds).
+Test Suite 'CameraSessionTests' passed at 2026-07-05 19:51:44.552.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'CompositorTests' started at 2026-07-05 19:51:44.552.
+Test Case '-[AirStageTests.CompositorTests testCompositorExcludesRemovedLayers]' started.
+Test Case '-[AirStageTests.CompositorTests testCompositorExcludesRemovedLayers]' passed (0.001 seconds).
+Test Case '-[AirStageTests.CompositorTests testCompositorOrdersLayersByZIndex]' started.
+Test Case '-[AirStageTests.CompositorTests testCompositorOrdersLayersByZIndex]' passed (0.000 seconds).
+Test Case '-[AirStageTests.CompositorTests testCompositorProducesOutputFrameMetadata]' started.
+Test Case '-[AirStageTests.CompositorTests testCompositorProducesOutputFrameMetadata]' passed (0.000 seconds).
+Test Case '-[AirStageTests.CompositorTests testCompositorReceivesCameraFrameAndLayerSnapshot]' started.
+Test Case '-[AirStageTests.CompositorTests testCompositorReceivesCameraFrameAndLayerSnapshot]' passed (0.000 seconds).
+Test Case '-[AirStageTests.CompositorTests testCompositorSnapshotWithEmptyScene]' started.
+Test Case '-[AirStageTests.CompositorTests testCompositorSnapshotWithEmptyScene]' passed (0.000 seconds).
+Test Suite 'CompositorTests' passed at 2026-07-05 19:51:44.553.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'DebugOverlayTests' started at 2026-07-05 19:51:44.554.
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayHiddenByDefault]' started.
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayHiddenByDefault]' passed (0.001 seconds).
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayShowsCameraStatus]' started.
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayShowsCameraStatus]' passed (0.001 seconds).
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayShowsHandControlAndGesturePlaceholder]' started.
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayShowsHandControlAndGesturePlaceholder]' passed (0.000 seconds).
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayShowsLayerCountAndSelectedLayer]' started.
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayShowsLayerCountAndSelectedLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayVisibleWhenSettingEnabled]' started.
+Test Case '-[AirStageTests.DebugOverlayTests testDebugOverlayVisibleWhenSettingEnabled]' passed (0.000 seconds).
+Test Suite 'DebugOverlayTests' passed at 2026-07-05 19:51:44.557.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+Test Suite 'EditNoteTests' started at 2026-07-05 19:51:44.557.
+Test Case '-[AirStageTests.EditNoteTests testEditedNoteTitleAppearsInRemoveLayerMenu]' started.
+Test Case '-[AirStageTests.EditNoteTests testEditedNoteTitleAppearsInRemoveLayerMenu]' passed (0.000 seconds).
+Test Case '-[AirStageTests.EditNoteTests testEditingNoteUpdatesLayerText]' started.
+Test Case '-[AirStageTests.EditNoteTests testEditingNoteUpdatesLayerText]' passed (0.000 seconds).
+Test Case '-[AirStageTests.EditNoteTests testEmptyNoteShowsPlaceholder]' started.
+Test Case '-[AirStageTests.EditNoteTests testEmptyNoteShowsPlaceholder]' passed (0.000 seconds).
+Test Suite 'EditNoteTests' passed at 2026-07-05 19:51:44.558.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'GestureEngineTests' started at 2026-07-05 19:51:44.558.
+Test Case '-[AirStageTests.GestureEngineTests testCloseThumbAndIndexStartsPinch]' started.
+Test Case '-[AirStageTests.GestureEngineTests testCloseThumbAndIndexStartsPinch]' passed (0.000 seconds).
+Test Case '-[AirStageTests.GestureEngineTests testLowConfidenceDoesNotStartPinch]' started.
+Test Case '-[AirStageTests.GestureEngineTests testLowConfidenceDoesNotStartPinch]' passed (0.000 seconds).
+Test Case '-[AirStageTests.GestureEngineTests testPinchMovementProducesMovedEvent]' started.
+Test Case '-[AirStageTests.GestureEngineTests testPinchMovementProducesMovedEvent]' passed (0.000 seconds).
+Test Case '-[AirStageTests.GestureEngineTests testSeparatedFingersEndPinch]' started.
+Test Case '-[AirStageTests.GestureEngineTests testSeparatedFingersEndPinch]' passed (0.000 seconds).
+Test Suite 'GestureEngineTests' passed at 2026-07-05 19:51:44.558.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+Test Suite 'GestureLayerControllerTests' started at 2026-07-05 19:51:44.558.
+Test Case '-[AirStageTests.GestureLayerControllerTests testHandControlDisabledIgnoresPinchEvents]' started.
+Test Case '-[AirStageTests.GestureLayerControllerTests testHandControlDisabledIgnoresPinchEvents]' passed (0.000 seconds).
+Test Case '-[AirStageTests.GestureLayerControllerTests testPinchBeginSelectsTopLayerAtGesturePoint]' started.
+Test Case '-[AirStageTests.GestureLayerControllerTests testPinchBeginSelectsTopLayerAtGesturePoint]' passed (0.000 seconds).
+Test Case '-[AirStageTests.GestureLayerControllerTests testPinchEndReleasesLayer]' started.
+Test Case '-[AirStageTests.GestureLayerControllerTests testPinchEndReleasesLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.GestureLayerControllerTests testPinchMoveUpdatesGrabbedLayerPosition]' started.
+Test Case '-[AirStageTests.GestureLayerControllerTests testPinchMoveUpdatesGrabbedLayerPosition]' passed (0.000 seconds).
+Test Suite 'GestureLayerControllerTests' passed at 2026-07-05 19:51:44.559.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+Test Suite 'HandPoseTrackingTests' started at 2026-07-05 19:51:44.559.
+Test Case '-[AirStageTests.HandPoseTrackingTests testFakeHandPoseFrameCanRepresentPinchCandidate]' started.
+Test Case '-[AirStageTests.HandPoseTrackingTests testFakeHandPoseFrameCanRepresentPinchCandidate]' passed (0.000 seconds).
+Test Case '-[AirStageTests.HandPoseTrackingTests testFakeHandPoseTrackerReturnsQueuedFrames]' started.
+Test Case '-[AirStageTests.HandPoseTrackingTests testFakeHandPoseTrackerReturnsQueuedFrames]' passed (0.000 seconds).
+Test Case '-[AirStageTests.HandPoseTrackingTests testLowConfidenceFrameIgnored]' started.
+Test Case '-[AirStageTests.HandPoseTrackingTests testLowConfidenceFrameIgnored]' passed (0.000 seconds).
+Test Case '-[AirStageTests.HandPoseTrackingTests testNoLandmarksProducesNoGestureCandidate]' started.
+Test Case '-[AirStageTests.HandPoseTrackingTests testNoLandmarksProducesNoGestureCandidate]' passed (0.000 seconds).
+Test Suite 'HandPoseTrackingTests' passed at 2026-07-05 19:51:44.560.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ImageImportTests' started at 2026-07-05 19:51:44.560.
+Test Case '-[AirStageTests.ImageImportTests testImageLayerLimitIsEnforced]' started.
+Test Case '-[AirStageTests.ImageImportTests testImageLayerLimitIsEnforced]' passed (0.005 seconds).
+Test Case '-[AirStageTests.ImageImportTests testImageLayerUsesFilenameAsTitle]' started.
+Test Case '-[AirStageTests.ImageImportTests testImageLayerUsesFilenameAsTitle]' passed (0.001 seconds).
+Test Case '-[AirStageTests.ImageImportTests testShareImageAddsImageLayerFromSelectedFile]' started.
+Test Case '-[AirStageTests.ImageImportTests testShareImageAddsImageLayerFromSelectedFile]' passed (0.001 seconds).
+Test Case '-[AirStageTests.ImageImportTests testUnsupportedFileShowsFriendlyError]' started.
+Test Case '-[AirStageTests.ImageImportTests testUnsupportedFileShowsFriendlyError]' passed (0.000 seconds).
+Test Suite 'ImageImportTests' passed at 2026-07-05 19:51:44.567.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.007 (0.007) seconds
+Test Suite 'IntegrationRegressionTests' started at 2026-07-05 19:51:44.567.
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationAddImageResizeDelete]' started.
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationAddImageResizeDelete]' passed (0.000 seconds).
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationAddNoteEditDragRemoveOutside]' started.
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationAddNoteEditDragRemoveOutside]' passed (0.000 seconds).
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationDebugOverlayToggle]' started.
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationDebugOverlayToggle]' passed (0.000 seconds).
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationSettingsResetOnboarding]' started.
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationSettingsResetOnboarding]' passed (0.001 seconds).
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationWindowLimitBlocked]' started.
+Test Case '-[AirStageTests.IntegrationRegressionTests testIntegrationWindowLimitBlocked]' passed (0.000 seconds).
+Test Suite 'IntegrationRegressionTests' passed at 2026-07-05 19:51:44.569.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'MenuModelTests' started at 2026-07-05 19:51:44.569.
+Test Case '-[AirStageTests.MenuModelTests testAddNoteIsEnabled]' started.
+Test Case '-[AirStageTests.MenuModelTests testAddNoteIsEnabled]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testDisabledActionsDoNotEmitIntents]' started.
+Test Case '-[AirStageTests.MenuModelTests testDisabledActionsDoNotEmitIntents]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testDisabledActionsExposeReasonWhenUnavailable]' started.
+Test Case '-[AirStageTests.MenuModelTests testDisabledActionsExposeReasonWhenUnavailable]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testMenuContainsPrimaryActions]' started.
+Test Case '-[AirStageTests.MenuModelTests testMenuContainsPrimaryActions]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testQuitIsEnabled]' started.
+Test Case '-[AirStageTests.MenuModelTests testQuitIsEnabled]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testRemoveLayerMenuDisabledWhenNoLayersExist]' started.
+Test Case '-[AirStageTests.MenuModelTests testRemoveLayerMenuDisabledWhenNoLayersExist]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testRemoveLayerMenuListsCurrentLayers]' started.
+Test Case '-[AirStageTests.MenuModelTests testRemoveLayerMenuListsCurrentLayers]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testSelectingQuitEmitsIntent]' started.
+Test Case '-[AirStageTests.MenuModelTests testSelectingQuitEmitsIntent]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testSelectingRemoveLayerMenuItemRemovesThatLayer]' started.
+Test Case '-[AirStageTests.MenuModelTests testSelectingRemoveLayerMenuItemRemovesThatLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testSelectingShareImageEmitsIntent]' started.
+Test Case '-[AirStageTests.MenuModelTests testSelectingShareImageEmitsIntent]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testSelectingShowPreviewEmitsIntent]' started.
+Test Case '-[AirStageTests.MenuModelTests testSelectingShowPreviewEmitsIntent]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testSettingsIsDisabledWithReason]' started.
+Test Case '-[AirStageTests.MenuModelTests testSettingsIsDisabledWithReason]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testShareImageIsEnabled]' started.
+Test Case '-[AirStageTests.MenuModelTests testShareImageIsEnabled]' passed (0.000 seconds).
+Test Case '-[AirStageTests.MenuModelTests testShowPreviewIsEnabled]' started.
+Test Case '-[AirStageTests.MenuModelTests testShowPreviewIsEnabled]' passed (0.000 seconds).
+Test Suite 'MenuModelTests' passed at 2026-07-05 19:51:44.571.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'OnboardingStateMachineTests' started at 2026-07-05 19:51:44.571.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testFirstRunStartsAtWelcome]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testFirstRunStartsAtWelcome]' passed (0.000 seconds).
+Test Case '-[AirStageTests.OnboardingStateMachineTests testObserveGrabCompletesGrabStep]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testObserveGrabCompletesGrabStep]' passed (0.000 seconds).
+Test Case '-[AirStageTests.OnboardingStateMachineTests testResetOnboardingStartsAgain]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testResetOnboardingStartsAgain]' passed (0.000 seconds).
+Test Case '-[AirStageTests.OnboardingStateMachineTests testReturningUserStartsCompleted]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testReturningUserStartsCompleted]' passed (0.000 seconds).
+Test Case '-[AirStageTests.OnboardingStateMachineTests testScaleAboveThresholdForSixFramesCompletesZoomStep]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testScaleAboveThresholdForSixFramesCompletesZoomStep]' passed (0.000 seconds).
+Test Case '-[AirStageTests.OnboardingStateMachineTests testShowMeSpawnsTutorialItemAndAdvancesToGrab]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testShowMeSpawnsTutorialItemAndAdvancesToGrab]' passed (0.000 seconds).
+Test Case '-[AirStageTests.OnboardingStateMachineTests testShrinkBelowThresholdForSixFramesStartsVanishHold]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testShrinkBelowThresholdForSixFramesStartsVanishHold]' passed (0.000 seconds).
+Test Case '-[AirStageTests.OnboardingStateMachineTests testVanishHoldRemovesTutorialItemAndShowsVirtualCameraPrompt]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testVanishHoldRemovesTutorialItemAndShowsVirtualCameraPrompt]' passed (0.000 seconds).
+Test Case '-[AirStageTests.OnboardingStateMachineTests testVirtualCameraPromptDismissedTransitionsToCompleted]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testVirtualCameraPromptDismissedTransitionsToCompleted]' passed (0.000 seconds).
+Test Case '-[AirStageTests.OnboardingStateMachineTests testVirtualCameraTurnOnTappedTransitionsToCompleted]' started.
+Test Case '-[AirStageTests.OnboardingStateMachineTests testVirtualCameraTurnOnTappedTransitionsToCompleted]' passed (0.000 seconds).
+Test Suite 'OnboardingStateMachineTests' passed at 2026-07-05 19:51:44.572.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'PreviewViewModelTests' started at 2026-07-05 19:51:44.572.
+Test Case '-[AirStageTests.PreviewViewModelTests testCameraPermissionStateIsLogged]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testCameraPermissionStateIsLogged]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testOnFrameCapturedDrivesGestureEngine]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testOnFrameCapturedDrivesGestureEngine]' passed (0.109 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testOnStateChangeFiresWhenPermissionGranted]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testOnStateChangeFiresWhenPermissionGranted]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testOnStateChangeFiresWhenSessionFails]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testOnStateChangeFiresWhenSessionFails]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testOnStateChangeFiresWhenSessionStarts]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testOnStateChangeFiresWhenSessionStarts]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testPreviewShowsCameraPermissionRequiredWhenPermissionDenied]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testPreviewShowsCameraPermissionRequiredWhenPermissionDenied]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testPreviewShowsCameraPermissionRequiredWhenPermissionMissing]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testPreviewShowsCameraPermissionRequiredWhenPermissionMissing]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testQuickAddClearRemovesAllLayersAfterConfirmationOrSimpleAction]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testQuickAddClearRemovesAllLayersAfterConfirmationOrSimpleAction]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testQuickAddNoteAddsNoteLayer]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testQuickAddNoteAddsNoteLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testQuickAddShowsSceneFullMessageWhenLimitReached]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testQuickAddShowsSceneFullMessageWhenLimitReached]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testQuickAddToolbarVisibleWhenPreviewHovered]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testQuickAddToolbarVisibleWhenPreviewHovered]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testShowMeAutoEnablesHandControl]' started.
+/Users/paw/WebstormProjects/AirStage/AirStage/Tests/AirStageTests/PreviewViewModelTests.swift:276: error: -[AirStageTests.PreviewViewModelTests testShowMeAutoEnablesHandControl] : XCTAssertTrue failed
+Test Case '-[AirStageTests.PreviewViewModelTests testShowMeAutoEnablesHandControl]' failed (0.019 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testShowPreviewActionCreatesVisiblePreviewState]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testShowPreviewActionCreatesVisiblePreviewState]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingAutoVanishAfterHold]' started.
+/Users/paw/WebstormProjects/AirStage/AirStage/Tests/AirStageTests/PreviewViewModelTests.swift:232: error: -[AirStageTests.PreviewViewModelTests testViewModelOnboardingAutoVanishAfterHold] : XCTAssertEqual failed: ("completed") is not equal to ("shrinkHold")
+/Users/paw/WebstormProjects/AirStage/AirStage/Tests/AirStageTests/PreviewViewModelTests.swift:235: error: -[AirStageTests.PreviewViewModelTests testViewModelOnboardingAutoVanishAfterHold] : XCTAssertEqual failed: ("completed") is not equal to ("virtualCameraPrompt")
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingAutoVanishAfterHold]' failed (3.304 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingReset]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingReset]' passed (0.001 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingSpawnsAndRemovesTutorialCard]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingSpawnsAndRemovesTutorialCard]' passed (1.655 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingUpdatesTutorialCardTitle]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingUpdatesTutorialCardTitle]' passed (0.000 seconds).
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingVanishViaDeleteKeyOrOutsideDrag]' started.
+Test Case '-[AirStageTests.PreviewViewModelTests testViewModelOnboardingVanishViaDeleteKeyOrOutsideDrag]' passed (0.000 seconds).
+Test Suite 'PreviewViewModelTests' failed at 2026-07-05 19:51:49.666.
+	 Executed 18 tests, with 3 failures (0 unexpected) in 5.092 (5.093) seconds
+Test Suite 'SceneGeometryTests' started at 2026-07-05 19:51:49.666.
+Test Case '-[AirStageTests.SceneGeometryTests testClampPositionKeepsLayerPartiallyVisible]' started.
+Test Case '-[AirStageTests.SceneGeometryTests testClampPositionKeepsLayerPartiallyVisible]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneGeometryTests testConvertHandPointToCanvas]' started.
+Test Case '-[AirStageTests.SceneGeometryTests testConvertHandPointToCanvas]' passed (0.000 seconds).
+Test Suite 'SceneGeometryTests' passed at 2026-07-05 19:51:49.666.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'SceneStoreTests' started at 2026-07-05 19:51:49.666.
+Test Case '-[AirStageTests.SceneStoreTests testCanAddLayerWhenUnderLimit]' started.
+Test Case '-[AirStageTests.SceneStoreTests testCanAddLayerWhenUnderLimit]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testCannotAddMoreThanFourNoteLayers]' started.
+Test Case '-[AirStageTests.SceneStoreTests testCannotAddMoreThanFourNoteLayers]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testCannotAddMoreThanOneWindowCaptureLayer]' started.
+Test Case '-[AirStageTests.SceneStoreTests testCannotAddMoreThanOneWindowCaptureLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testCannotAddMoreThanThreeImageLayers]' started.
+Test Case '-[AirStageTests.SceneStoreTests testCannotAddMoreThanThreeImageLayers]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testCannotExceedSixTotalLayers]' started.
+Test Case '-[AirStageTests.SceneStoreTests testCannotExceedSixTotalLayers]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testDeleteRemovesSelectedLayer]' started.
+Test Case '-[AirStageTests.SceneStoreTests testDeleteRemovesSelectedLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testDeleteWithNoSelectionDoesNothing]' started.
+Test Case '-[AirStageTests.SceneStoreTests testDeleteWithNoSelectionDoesNothing]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testDraggingBackInsideCancelsRemovalState]' started.
+Test Case '-[AirStageTests.SceneStoreTests testDraggingBackInsideCancelsRemovalState]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testDraggingLayerKeepsLayerVisibleForNormalDrag]' started.
+Test Case '-[AirStageTests.SceneStoreTests testDraggingLayerKeepsLayerVisibleForNormalDrag]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testDraggingLayerUpdatesPosition]' started.
+Test Case '-[AirStageTests.SceneStoreTests testDraggingLayerUpdatesPosition]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testDraggingOutsideArmsRemovalState]' started.
+Test Case '-[AirStageTests.SceneStoreTests testDraggingOutsideArmsRemovalState]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testDraggingUnknownLayerDoesNothing]' started.
+Test Case '-[AirStageTests.SceneStoreTests testDraggingUnknownLayerDoesNothing]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testReleasingInsideKeepsLayer]' started.
+Test Case '-[AirStageTests.SceneStoreTests testReleasingInsideKeepsLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testReleasingOutsideRemovesLayer]' started.
+Test Case '-[AirStageTests.SceneStoreTests testReleasingOutsideRemovesLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testResizeDoesNotGoBelowMinimumSize]' started.
+Test Case '-[AirStageTests.SceneStoreTests testResizeDoesNotGoBelowMinimumSize]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testResizeKeepsLayerInsidePreviewWhenPossible]' started.
+Test Case '-[AirStageTests.SceneStoreTests testResizeKeepsLayerInsidePreviewWhenPossible]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testResizingLayerUpdatesSize]' started.
+Test Case '-[AirStageTests.SceneStoreTests testResizingLayerUpdatesSize]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testSceneFullOffersReplaceOldestOrCancel]' started.
+Test Case '-[AirStageTests.SceneStoreTests testSceneFullOffersReplaceOldestOrCancel]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testSelectingLayerMarksOnlyThatLayerSelected]' started.
+Test Case '-[AirStageTests.SceneStoreTests testSelectingLayerMarksOnlyThatLayerSelected]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SceneStoreTests testSelectingLayerRaisesZIndex]' started.
+Test Case '-[AirStageTests.SceneStoreTests testSelectingLayerRaisesZIndex]' passed (0.000 seconds).
+Test Suite 'SceneStoreTests' passed at 2026-07-05 19:51:49.670.
+	 Executed 20 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+Test Suite 'SettingsStoreTests' started at 2026-07-05 19:51:49.670.
+Test Case '-[AirStageTests.SettingsStoreTests testDebugOverlaySettingPersists]' started.
+Test Case '-[AirStageTests.SettingsStoreTests testDebugOverlaySettingPersists]' passed (0.001 seconds).
+Test Case '-[AirStageTests.SettingsStoreTests testHandControlSettingPersists]' started.
+Test Case '-[AirStageTests.SettingsStoreTests testHandControlSettingPersists]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SettingsStoreTests testResetOnboardingClearsCompletedState]' started.
+Test Case '-[AirStageTests.SettingsStoreTests testResetOnboardingClearsCompletedState]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SettingsStoreTests testSnapToGridSettingPersists]' started.
+Test Case '-[AirStageTests.SettingsStoreTests testSnapToGridSettingPersists]' passed (0.000 seconds).
+Test Suite 'SettingsStoreTests' passed at 2026-07-05 19:51:49.672.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+Test Suite 'SnapToGridTests' started at 2026-07-05 19:51:49.672.
+Test Case '-[AirStageTests.SnapToGridTests testSnapToGridAppliesOnlyAfterDragEnd]' started.
+Test Case '-[AirStageTests.SnapToGridTests testSnapToGridAppliesOnlyAfterDragEnd]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SnapToGridTests testSnapToGridDoesNotChangePositionWhenDisabled]' started.
+Test Case '-[AirStageTests.SnapToGridTests testSnapToGridDoesNotChangePositionWhenDisabled]' passed (0.000 seconds).
+Test Case '-[AirStageTests.SnapToGridTests testSnapToGridRoundsLayerPositionWhenEnabled]' started.
+Test Case '-[AirStageTests.SnapToGridTests testSnapToGridRoundsLayerPositionWhenEnabled]' passed (0.000 seconds).
+Test Suite 'SnapToGridTests' passed at 2026-07-05 19:51:49.673.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'ViewModelVirtualCameraTests' started at 2026-07-05 19:51:49.673.
+Test Case '-[AirStageTests.ViewModelVirtualCameraTests testViewModelCallsManagerOnVirtualCameraActivationRequest]' started.
+Test Case '-[AirStageTests.ViewModelVirtualCameraTests testViewModelCallsManagerOnVirtualCameraActivationRequest]' passed (0.001 seconds).
+Test Suite 'ViewModelVirtualCameraTests' passed at 2026-07-05 19:51:49.674.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'VirtualCameraTests' started at 2026-07-05 19:51:49.674.
+Test Case '-[AirStageTests.VirtualCameraTests testExtensionStatusMessagesAreUserFriendly]' started.
+Test Case '-[AirStageTests.VirtualCameraTests testExtensionStatusMessagesAreUserFriendly]' passed (0.000 seconds).
+Test Case '-[AirStageTests.VirtualCameraTests testInstallRequestTransitionsToPendingApproval]' started.
+Test Case '-[AirStageTests.VirtualCameraTests testInstallRequestTransitionsToPendingApproval]' passed (0.000 seconds).
+Test Case '-[AirStageTests.VirtualCameraTests testVirtualCameraDisabledBeforeSetup]' started.
+Test Case '-[AirStageTests.VirtualCameraTests testVirtualCameraDisabledBeforeSetup]' passed (0.000 seconds).
+Test Suite 'VirtualCameraTests' passed at 2026-07-05 19:51:49.674.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'WindowCaptureTests' started at 2026-07-05 19:51:49.674.
+Test Case '-[AirStageTests.WindowCaptureTests testCannotAddSecondWindowCaptureLayer]' started.
+Test Case '-[AirStageTests.WindowCaptureTests testCannotAddSecondWindowCaptureLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.WindowCaptureTests testFakeWindowCaptureSourceCanSimulateFailure]' started.
+Test Case '-[AirStageTests.WindowCaptureTests testFakeWindowCaptureSourceCanSimulateFailure]' passed (0.000 seconds).
+Test Case '-[AirStageTests.WindowCaptureTests testFakeWindowCaptureSourceReturnsConfiguredWindows]' started.
+Test Case '-[AirStageTests.WindowCaptureTests testFakeWindowCaptureSourceReturnsConfiguredWindows]' passed (0.000 seconds).
+Test Case '-[AirStageTests.WindowCaptureTests testShareWindowAddsWindowCaptureLayer]' started.
+Test Case '-[AirStageTests.WindowCaptureTests testShareWindowAddsWindowCaptureLayer]' passed (0.000 seconds).
+Test Case '-[AirStageTests.WindowCaptureTests testShareWindowMenuIsEnabled]' started.
+Test Case '-[AirStageTests.WindowCaptureTests testShareWindowMenuIsEnabled]' passed (0.000 seconds).
+Test Case '-[AirStageTests.WindowCaptureTests testWindowCaptureFailureShowsFriendlyError]' started.
+Test Case '-[AirStageTests.WindowCaptureTests testWindowCaptureFailureShowsFriendlyError]' passed (0.000 seconds).
+Test Suite 'WindowCaptureTests' passed at 2026-07-05 19:51:49.675.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'AirStagePackageTests.xctest' failed at 2026-07-05 19:51:49.675.
+	 Executed 124 tests, with 3 failures (0 unexpected) in 5.121 (5.128) seconds
+Test Suite 'All tests' failed at 2026-07-05 19:51:49.675.
+	 Executed 124 tests, with 3 failures (0 unexpected) in 5.121 (5.129) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

@@ -5,11 +5,13 @@ import AirStage
 /// Controls the Settings window. hosts SettingsView in NSHostingView.
 final class SettingsWindowController: NSWindowController {
     private let settingsStore: SettingsStore
+    private let cameraManager: VirtualCameraManager
 
-    init(settingsStore: SettingsStore) {
+    init(settingsStore: SettingsStore, cameraManager: VirtualCameraManager) {
         self.settingsStore = settingsStore
+        self.cameraManager = cameraManager
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 350),
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 380),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -19,8 +21,8 @@ final class SettingsWindowController: NSWindowController {
 
         super.init(window: window)
 
-        let hostingView = NSHostingView(rootView: SettingsView(store: settingsStore))
-        hostingView.frame = NSRect(x: 0, y: 0, width: 400, height: 350)
+        let hostingView = NSHostingView(rootView: SettingsView(store: settingsStore, cameraManager: cameraManager))
+        hostingView.frame = NSRect(x: 0, y: 0, width: 400, height: 380)
         window.contentView = hostingView
     }
 

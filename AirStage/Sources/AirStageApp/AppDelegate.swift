@@ -5,10 +5,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem?
     private let sceneStore = SceneStore()
-    private lazy var menuModel = MenuModel(sceneStore: sceneStore)
+    private lazy var menuModel = MenuModel(
+        sceneStore: sceneStore,
+        isOnboardingCompleted: {
+            UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        }
+    )
     private var previewWindowController: PreviewWindowController?
     private let settingsStore = SettingsStore()
     private var settingsWindowController: SettingsWindowController?
+    private let virtualCameraManager = VirtualCameraManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         LaunchDiagnostics.logStartup()
@@ -20,6 +26,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menuModel.onIntent = { [weak self] intent in
             self?.handle(intent)
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onboardingStatusChanged),
+            name: .onboardingCompleted,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onboardingStatusChanged),
+            name: .resetOnboardingRequested,
+            object: nil
+        )
+
+        // Auto-open the preview window at launch so the camera scene is
+        // immediately visible. The menu is locked during onboarding, so
+        // this call is made directly rather than via the menu model.
+        showPreview()
+        AppLog.app.info("Preview window opened automatically at launch")
+    }
+
+    @objc private func onboardingStatusChanged() {
+        if let menu = statusItem?.menu {
+            rebuildMenu(menu)
         }
     }
 
@@ -36,6 +67,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             showPreview()
         case .shareImage:
             presentImagePicker()
+        case .shareWindowOrScreen:
+            presentWindowCapturePicker()
         case .settings:
             AppLog.menu.info("Settings requested")
             showSettings()
@@ -72,7 +105,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if previewWindowController == nil {
             previewWindowController = PreviewWindowController(
                 permissionService: AVCameraPermissionService(),
-                sceneStore: sceneStore
+                sceneStore: sceneStore,
+                settingsStore: settingsStore,
+                virtualCameraManager: virtualCameraManager
             )
             previewWindowController?.onAddImage = { [weak self] in
                 self?.presentImagePicker()
@@ -84,10 +119,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showSettings() {
         if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController(settingsStore: settingsStore)
+            settingsWindowController = SettingsWindowController(
+                settingsStore: settingsStore,
+                cameraManager: virtualCameraManager
+            )
         }
         settingsWindowController?.showWindow(nil)
         settingsWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
+    private func presentWindowCapturePicker() {
+        AppLog.sources.info("Window capture picker requested")
+        let importer = WindowCaptureImporter(store: sceneStore)
+        let result = importer.importCapture(
+            title: "Screen Capture",
+            captureID: "placeholder"
+        )
+        switch result {
+        case .success:
+            showPreview()
+        case .failure(let error):
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = "Cannot Add Window Capture"
+                alert.informativeText = error.errorDescription ?? "An unknown error occurred."
+                alert.alertStyle = .warning
+                alert.runModal()
+            }
+        }
     }
 
     // MARK: - Menu construction
@@ -159,10 +218,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func makeItem(_ action: MenuAction) -> NSMenuItem {
+        let keyEquivalent = (action.id == .quit) ? "q" : ""
         let item = NSMenuItem(
             title: action.title,
             action: action.isEnabled ? #selector(handleMenuAction(_:)) : nil,
-            keyEquivalent: ""
+            keyEquivalent: keyEquivalent
         )
         item.isEnabled = action.isEnabled
         item.representedObject = action.id.rawValue

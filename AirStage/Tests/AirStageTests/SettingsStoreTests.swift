@@ -22,7 +22,7 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertFalse(store.debugOverlay)
 
         store.debugOverlay = true
-        XCTAssertTrue(testDefaults.bool(forKey: "debugOverlay"))
+        XCTAssertTrue(testDefaults.bool(forKey: "airStage.showDebug"))
 
         let secondStore = SettingsStore(defaults: testDefaults)
         XCTAssertTrue(secondStore.debugOverlay)

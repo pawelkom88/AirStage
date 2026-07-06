@@ -4,17 +4,24 @@ import Foundation
 /// Kept separate from AppKit so it can be unit-tested without a running NSApplication.
 public final class MenuModel {
     private let sceneStore: SceneStore?
+    private let isOnboardingCompleted: () -> Bool
 
     /// All primary menu actions in display order.
     public var actions: [MenuAction] {
+        let completed = isOnboardingCompleted()
         let hasLayers = !(sceneStore?.layers.isEmpty ?? true)
+
+        if !completed {
+            return [
+                MenuAction(id: .quit, title: "Quit AirStage")
+            ]
+        }
+
         return [
             MenuAction(id: .addNote,            title: "Add Note"),
             MenuAction(id: .shareImage,         title: "Share Image…"),
             MenuAction(id: .shareWindowOrScreen,
-                       title: "Share Window or Screen…",
-                       isEnabled: false,
-                       disabledReason: "Window capture is available in a later release."),
+                       title: "Share Window or Screen…"),
             MenuAction(id: .removeLayer,        title: "Remove Layer",
                        isEnabled: hasLayers,
                        disabledReason: hasLayers ? nil : "No layers in scene."),
@@ -31,8 +38,12 @@ public final class MenuModel {
     /// Called whenever the user selects an action.
     public var onIntent: ((MenuIntent) -> Void)?
 
-    public init(sceneStore: SceneStore? = nil) {
+    public init(
+        sceneStore: SceneStore? = nil,
+        isOnboardingCompleted: @escaping () -> Bool = { true }
+    ) {
         self.sceneStore = sceneStore
+        self.isOnboardingCompleted = isOnboardingCompleted
     }
 
     public var removableLayers: [SceneLayer] {

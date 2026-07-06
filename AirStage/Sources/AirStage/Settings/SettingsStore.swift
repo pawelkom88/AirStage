@@ -4,6 +4,7 @@ import OSLog
 
 public extension Notification.Name {
     static let resetOnboardingRequested = Notification.Name("resetOnboardingRequested")
+    static let onboardingCompleted = Notification.Name("onboardingCompleted")
 }
 
 public final class SettingsStore: ObservableObject {
@@ -18,7 +19,7 @@ public final class SettingsStore: ObservableObject {
 
     @Published public var debugOverlay: Bool {
         didSet {
-            defaults.set(debugOverlay, forKey: "debugOverlay")
+            defaults.set(debugOverlay, forKey: "airStage.showDebug")
             AppLog.settings.info("Setting changed debugOverlay=\(self.debugOverlay, privacy: .public)")
         }
     }
@@ -40,7 +41,7 @@ public final class SettingsStore: ObservableObject {
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.launchAtLogin = defaults.bool(forKey: "launchAtLogin")
-        self.debugOverlay = defaults.bool(forKey: "debugOverlay")
+        self.debugOverlay = defaults.bool(forKey: "airStage.showDebug")
         self.handControl = defaults.bool(forKey: "handControl")
         self.snapToGrid = defaults.bool(forKey: "snapToGrid")
     }

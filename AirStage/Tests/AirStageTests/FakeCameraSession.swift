@@ -1,9 +1,11 @@
 import AirStage
+import CoreVideo
 
 final class FakeCameraSession: CameraSession {
     var didStart = false
     var didStop = false
     var failOnStart = false
+    var onFrameCaptured: ((CVPixelBuffer) -> Void)?
 
     init() {}
 

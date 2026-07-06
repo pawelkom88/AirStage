@@ -157,15 +157,19 @@ public final class SceneStore: ObservableObject {
         }
     }
 
-    public func endDrag(layerID id: UUID, center: CGPoint, sceneBounds: CGRect) {
+    public func endDrag(layerID id: UUID, center: CGPoint, sceneBounds: CGRect, snapToGrid: Bool = false) {
         if shouldRemoveLayer(center: center, sceneBounds: sceneBounds) {
             removeLayer(withID: id, reason: "draggedOutside")
         } else {
             if let index = layers.firstIndex(where: { $0.id == id }) {
-                let clamped = SceneGeometry.clampPosition(center, size: layers[index].size, in: sceneBounds)
-                layers[index].position = clamped
+                var finalPosition = SceneGeometry.clampPosition(center, size: layers[index].size, in: sceneBounds)
+                if snapToGrid {
+                    finalPosition = SceneGeometry.snapToGrid(finalPosition)
+                    AppLog.scene.debug("Layer snapped id=\(id.uuidString, privacy: .public) x=\(finalPosition.x) y=\(finalPosition.y)")
+                }
+                layers[index].position = finalPosition
                 layers[index].isBeingRemoved = false
-                AppLog.scene.debug("Layer moved id=\(id.uuidString, privacy: .public) x=\(clamped.x) y=\(clamped.y)")
+                AppLog.scene.debug("Layer moved id=\(id.uuidString, privacy: .public) x=\(finalPosition.x) y=\(finalPosition.y)")
             }
         }
     }
@@ -194,11 +198,31 @@ public final class SceneStore: ObservableObject {
         }
     }
 
+    private var resizingLayerID: UUID?
+
     public func beginResize(withID id: UUID) {
+        resizingLayerID = id
         AppLog.scene.info("Layer resize began id=\(id.uuidString, privacy: .public)")
     }
 
     public func endResize(withID id: UUID, finalSize: CGSize) {
+        resizingLayerID = nil
+        if let index = layers.firstIndex(where: { $0.id == id }) {
+            var minSize = SceneLimits.minNoteSize
+            switch layers[index].kind {
+            case .note:
+                minSize = SceneLimits.minNoteSize
+            case .image:
+                minSize = SceneLimits.minImageSize
+            case .windowCapture:
+                minSize = SceneLimits.minWindowSize
+            case .tutorial:
+                minSize = SceneLimits.minTutorialSize
+            }
+            let clampedW = max(minSize.width, layers[index].size.width)
+            let clampedH = max(minSize.height, layers[index].size.height)
+            layers[index].size = CGSize(width: clampedW, height: clampedH)
+        }
         let w = Int(finalSize.width)
         let h = Int(finalSize.height)
         AppLog.scene.info("Layer resize ended id=\(id.uuidString, privacy: .public) size=\(w)x\(h)")
@@ -216,6 +240,10 @@ public final class SceneStore: ObservableObject {
                 minSize = SceneLimits.minWindowSize
             case .tutorial:
                 minSize = SceneLimits.minTutorialSize
+            }
+
+            if resizingLayerID == id {
+                minSize = CGSize(width: 40, height: 40)
             }
 
             let clampedW = max(minSize.width, size.width)

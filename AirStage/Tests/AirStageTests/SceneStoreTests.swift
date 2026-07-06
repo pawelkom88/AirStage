@@ -288,4 +288,35 @@ final class SceneStoreTests: XCTestCase {
         XCTAssertEqual(layer?.position.x, -30) // bounds.minX(0) - 100/2 + 20 = -30
         XCTAssertEqual(layer?.position.y, -30) // bounds.minY(0) - 100/2 + 20 = -30
     }
+
+    func testResizeAllowsShrinkingDuringActiveResize() {
+        let store = SceneStore()
+        guard let id = store.addNote(title: "Note", position: CGPoint(x: 100, y: 100), size: CGSize(width: 150, height: 150)).layerID else {
+            XCTFail("Failed to add note")
+            return
+        }
+        
+        let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+        store.beginResize(withID: id)
+        store.resizeLayer(withID: id, size: CGSize(width: 50, height: 50), position: CGPoint(x: 50, y: 50), sceneBounds: bounds)
+        
+        let layer = store.layer(withID: id)
+        XCTAssertEqual(layer?.size, CGSize(width: 50, height: 50))
+    }
+
+    func testEndResizeSnapsSizeBackToStandardMinimum() {
+        let store = SceneStore()
+        guard let id = store.addNote(title: "Note", position: CGPoint(x: 100, y: 100), size: CGSize(width: 150, height: 150)).layerID else {
+            XCTFail("Failed to add note")
+            return
+        }
+        
+        let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+        store.beginResize(withID: id)
+        store.resizeLayer(withID: id, size: CGSize(width: 50, height: 50), position: CGPoint(x: 50, y: 50), sceneBounds: bounds)
+        store.endResize(withID: id, finalSize: CGSize(width: 50, height: 50))
+        
+        let layer = store.layer(withID: id)
+        XCTAssertEqual(layer?.size, CGSize(width: 80, height: 80))
+    }
 }

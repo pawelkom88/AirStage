@@ -20,8 +20,11 @@ struct StickyNoteView: View {
                     x: startPosition.x + value.translation.width,
                     y: startPosition.y + value.translation.height
                 )
-                let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+                let bounds = viewModel.sceneBounds
                 sceneStore.dragLayer(withID: layer.id, to: newPos, sceneBounds: bounds)
+                if let updated = sceneStore.layer(withID: layer.id) {
+                    viewModel.updateEdgeDeleteForDraggedLayer(updated)
+                }
             }
             .onEnded { value in
                 let newPos = CGPoint(
@@ -29,8 +32,9 @@ struct StickyNoteView: View {
                     y: startPosition.y + value.translation.height
                 )
                 startPosition = .zero
-                let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+                let bounds = viewModel.sceneBounds
                 sceneStore.endDrag(layerID: layer.id, center: newPos, sceneBounds: bounds)
+                viewModel.cancelEdgeDeleteIfNeeded()
             }
     }
 
@@ -84,12 +88,20 @@ struct StickyNoteView: View {
                 }
             }
         )
+        .overlay(
+            Group {
+                if viewModel.vanishHoldingLayerIDs.contains(layer.id) {
+                    ProgressCircleOverlay(duration: OnboardingThresholds.vanishHoldDuration)
+                }
+            }
+        )
         .opacity(layer.isBeingRemoved ? 0.4 : 1.0)
         .saturation(layer.isBeingRemoved ? 0.2 : 1.0)
         .gesture(dragGesture)
         .onTapGesture {
             sceneStore.selectLayer(layer.id)
         }
+        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id))
     }
 }
 
@@ -111,8 +123,11 @@ struct ImageCardView: View {
                     x: startPosition.x + value.translation.width,
                     y: startPosition.y + value.translation.height
                 )
-                let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+                let bounds = viewModel.sceneBounds
                 sceneStore.dragLayer(withID: layer.id, to: newPos, sceneBounds: bounds)
+                if let updated = sceneStore.layer(withID: layer.id) {
+                    viewModel.updateEdgeDeleteForDraggedLayer(updated)
+                }
             }
             .onEnded { value in
                 let newPos = CGPoint(
@@ -120,8 +135,9 @@ struct ImageCardView: View {
                     y: startPosition.y + value.translation.height
                 )
                 startPosition = .zero
-                let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+                let bounds = viewModel.sceneBounds
                 sceneStore.endDrag(layerID: layer.id, center: newPos, sceneBounds: bounds)
+                viewModel.cancelEdgeDeleteIfNeeded()
             }
     }
 
@@ -148,12 +164,14 @@ struct ImageCardView: View {
             }
         }
         .frame(width: layer.size.width, height: layer.size.height)
-        .background(.regularMaterial)
+        .background(
+            layer.imageURL != nil ? AnyView(Color.clear) : AnyView(Rectangle().fill(.regularMaterial))
+        )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(layer.isSelected ? Color.blue.opacity(0.6) : Color.black.opacity(0.1), lineWidth: layer.isSelected ? 2 : 1)
+                .stroke(layer.isSelected ? Color.blue.opacity(0.6) : (layer.imageURL != nil ? Color.clear : Color.black.opacity(0.1)), lineWidth: layer.isSelected ? 2 : 1)
         )
         .overlay(
             SelectedLayerOverlay(layer: layer, sceneStore: sceneStore, viewModel: viewModel)
@@ -172,12 +190,20 @@ struct ImageCardView: View {
                 }
             }
         )
+        .overlay(
+            Group {
+                if viewModel.vanishHoldingLayerIDs.contains(layer.id) {
+                    ProgressCircleOverlay(duration: OnboardingThresholds.vanishHoldDuration)
+                }
+            }
+        )
         .opacity(layer.isBeingRemoved ? 0.4 : 1.0)
         .saturation(layer.isBeingRemoved ? 0.2 : 1.0)
         .gesture(dragGesture)
         .onTapGesture {
             sceneStore.selectLayer(layer.id)
         }
+        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id))
     }
 }
 
@@ -199,8 +225,11 @@ struct DefaultCardView: View {
                     x: startPosition.x + value.translation.width,
                     y: startPosition.y + value.translation.height
                 )
-                let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+                let bounds = viewModel.sceneBounds
                 sceneStore.dragLayer(withID: layer.id, to: newPos, sceneBounds: bounds)
+                if let updated = sceneStore.layer(withID: layer.id) {
+                    viewModel.updateEdgeDeleteForDraggedLayer(updated)
+                }
             }
             .onEnded { value in
                 let newPos = CGPoint(
@@ -208,8 +237,9 @@ struct DefaultCardView: View {
                     y: startPosition.y + value.translation.height
                 )
                 startPosition = .zero
-                let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+                let bounds = viewModel.sceneBounds
                 sceneStore.endDrag(layerID: layer.id, center: newPos, sceneBounds: bounds)
+                viewModel.cancelEdgeDeleteIfNeeded()
             }
     }
 
@@ -249,10 +279,18 @@ struct DefaultCardView: View {
         )
         .opacity(layer.isBeingRemoved ? 0.4 : 1.0)
         .saturation(layer.isBeingRemoved ? 0.2 : 1.0)
+        .overlay(
+            Group {
+                if viewModel.vanishHoldingLayerIDs.contains(layer.id) {
+                    ProgressCircleOverlay(duration: OnboardingThresholds.vanishHoldDuration)
+                }
+            }
+        )
         .gesture(dragGesture)
         .onTapGesture {
             sceneStore.selectLayer(layer.id)
         }
+        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id))
     }
 }
 
@@ -260,31 +298,127 @@ struct SelectedLayerOverlay: View {
     let layer: SceneLayer
     let sceneStore: SceneStore
     let viewModel: PreviewViewModel
-    let sceneBounds: CGRect = CGRect(x: 0, y: 0, width: 640, height: 480)
+    private var sceneBounds: CGRect {
+        viewModel.sceneBounds
+    }
 
     @State private var startSize: CGSize = .zero
     @State private var startPosition: CGPoint = .zero
 
+    private func resizeTutorialSquare(
+        handle: ResizeHandle,
+        translation: CGSize
+    ) {
+        let signs = handle.signs
+        let projectedDelta = ((translation.width * signs.x) + (translation.height * signs.y)) / 2.0
+        let startSide = max(startSize.width, startSize.height)
+        let unclampedSide = startSide + projectedDelta
+        let side = max(SceneLimits.minTutorialSize.width, unclampedSide)
+
+        let appliedDelta = side - startSide
+
+        let newPosition = CGPoint(
+            x: startPosition.x + (appliedDelta * signs.x / 2.0),
+            y: startPosition.y + (appliedDelta * signs.y / 2.0)
+        )
+
+        sceneStore.resizeLayer(
+            withID: layer.id,
+            size: CGSize(width: side, height: side),
+            position: newPosition,
+            sceneBounds: sceneBounds
+        )
+
+        let scale = side / 150.0
+        viewModel.handleOnboardingEvent(.observe(grabbing: false, scale: scale))
+    }
+
     var body: some View {
         ZStack {
-            if layer.isSelected && !layer.isBeingRemoved {
+            if (layer.isSelected || layer.kind == .tutorial) && !layer.isBeingRemoved {
                 // Dashed outline
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(Color.blue.opacity(0.8), style: StrokeStyle(lineWidth: 2, dash: [4, 4]))
                 
-                // Bottom-right resize handle
-                VStack {
-                    Spacer()
+                let isGrabStep = viewModel.onboardingStep == .grabTutorial || viewModel.onboardingStep == .grabSuccess
+                if layer.kind != .tutorial || !isGrabStep {
+                    // Top-left resize handle
+                    VStack {
+                        HStack {
+                            ZStack {
+                                Color.clear
+                                    .frame(width: 72, height: 72)
+                                    .contentShape(Rectangle())
+                                Circle()
+                                    .fill(Color.blue)
+                                    .frame(width: 14, height: 14)
+                                    .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
+                                    .shadow(radius: 2)
+                            }
+                            .frame(width: 72, height: 72)
+                            .padding(-33) // position it exactly on the corner
+                            .gesture(
+                                    DragGesture(minimumDistance: 1)
+                                        .onChanged { value in
+                                            if startSize == .zero {
+                                                startSize = layer.size
+                                                startPosition = layer.position
+                                                sceneStore.beginResize(withID: layer.id)
+                                            }
+
+                                            if layer.kind == .tutorial {
+                                                resizeTutorialSquare(
+                                                    handle: .topLeft,
+                                                    translation: value.translation
+                                                )
+                                            } else {
+                                                let deltaW = -value.translation.width
+                                                let deltaH = -value.translation.height
+                                                let newW = startSize.width + deltaW
+                                                let newH = startSize.height + deltaH
+
+                                                let newPos = CGPoint(
+                                                    x: startPosition.x - deltaW / 2,
+                                                    y: startPosition.y - deltaH / 2
+                                                )
+                                                sceneStore.resizeLayer(withID: layer.id, size: CGSize(width: newW, height: newH), position: newPos, sceneBounds: sceneBounds)
+                                            }
+                                        }
+                                        .onEnded { value in
+                                            let finalSize = sceneStore.layer(withID: layer.id)?.size ?? layer.size
+                                            sceneStore.endResize(withID: layer.id, finalSize: finalSize)
+                                            startSize = .zero
+                                            startPosition = .zero
+
+                                            if layer.kind == .tutorial {
+                                                let scale = finalSize.width / 150.0
+                                                viewModel.handleOnboardingEvent(.observe(grabbing: false, scale: scale))
+                                            }
+                                        }
+                                )
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+
+                    // Bottom-right resize handle
+                    VStack {
+                        Spacer()
                     HStack {
                         Spacer()
-                        Circle()
-                            .fill(Color.blue)
-                            .frame(width: 14, height: 14)
-                            .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
-                            .shadow(radius: 2)
-                            .padding(-4) // position it exactly on the corner
-                            .contentShape(Rectangle())
-                            .gesture(
+                        ZStack {
+                            Color.clear
+                                .frame(width: 72, height: 72)
+                                .contentShape(Rectangle())
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 14, height: 14)
+                                .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
+                                .shadow(radius: 2)
+                        }
+                        .frame(width: 72, height: 72)
+                        .padding(-33) // position it exactly on the corner
+                        .gesture(
                                 DragGesture(minimumDistance: 1)
                                     .onChanged { value in
                                         if startSize == .zero {
@@ -292,21 +426,23 @@ struct SelectedLayerOverlay: View {
                                             startPosition = layer.position
                                             sceneStore.beginResize(withID: layer.id)
                                         }
-                                        let deltaW = value.translation.width
-                                        let deltaH = value.translation.height
-                                        let newW = startSize.width + deltaW
-                                        let newH = startSize.height + deltaH
-
-                                        let newPos = CGPoint(
-                                            x: startPosition.x + deltaW / 2,
-                                            y: startPosition.y + deltaH / 2
-                                        )
-                                        sceneStore.resizeLayer(withID: layer.id, size: CGSize(width: newW, height: newH), position: newPos, sceneBounds: sceneBounds)
 
                                         if layer.kind == .tutorial {
-                                            let currentW = max(SceneLimits.minTutorialSize.width, newW)
-                                            let scale = currentW / 150.0
-                                            viewModel.handleOnboardingEvent(.tutorialItemScaled(scale: scale))
+                                            resizeTutorialSquare(
+                                                handle: .bottomRight,
+                                                translation: value.translation
+                                            )
+                                        } else {
+                                            let deltaW = value.translation.width
+                                            let deltaH = value.translation.height
+                                            let newW = startSize.width + deltaW
+                                            let newH = startSize.height + deltaH
+
+                                            let newPos = CGPoint(
+                                                x: startPosition.x + deltaW / 2,
+                                                y: startPosition.y + deltaH / 2
+                                            )
+                                            sceneStore.resizeLayer(withID: layer.id, size: CGSize(width: newW, height: newH), position: newPos, sceneBounds: sceneBounds)
                                         }
                                     }
                                     .onEnded { value in
@@ -317,11 +453,12 @@ struct SelectedLayerOverlay: View {
 
                                         if layer.kind == .tutorial {
                                             let scale = finalSize.width / 150.0
-                                            viewModel.handleOnboardingEvent(.tutorialItemScaled(scale: scale))
+                                            viewModel.handleOnboardingEvent(.observe(grabbing: false, scale: scale))
                                         }
                                     }
                             )
                     }
+                }
                 }
             }
         }
@@ -334,6 +471,7 @@ struct TutorialSceneCardView: View {
     let viewModel: PreviewViewModel
 
     @State private var startPosition: CGPoint = .zero
+    @State private var snapEffect: Bool = false
 
     private var dragGesture: some Gesture {
         DragGesture()
@@ -346,12 +484,12 @@ struct TutorialSceneCardView: View {
                     x: startPosition.x + value.translation.width,
                     y: startPosition.y + value.translation.height
                 )
-                let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+                let bounds = viewModel.sceneBounds
                 sceneStore.dragLayer(withID: layer.id, to: newPos, sceneBounds: bounds)
 
                 if viewModel.onboardingStep == .grabTutorial {
-                    let dist = sqrt(pow(newPos.x - 320, 2) + pow(newPos.y - 240, 2))
-                    viewModel.handleOnboardingEvent(.tutorialItemMoved(distance: dist))
+                    let scale = layer.size.width / 150.0
+                    viewModel.handleOnboardingEvent(.observe(grabbing: true, scale: scale))
                 }
             }
             .onEnded { value in
@@ -360,19 +498,29 @@ struct TutorialSceneCardView: View {
                     y: startPosition.y + value.translation.height
                 )
                 startPosition = .zero
-                let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
+                let bounds = viewModel.sceneBounds
                 sceneStore.endDrag(layerID: layer.id, center: newPos, sceneBounds: bounds)
 
                 if viewModel.onboardingStep == .grabTutorial {
-                    let dist = sqrt(pow(newPos.x - 320, 2) + pow(newPos.y - 240, 2))
-                    viewModel.handleOnboardingEvent(.tutorialItemMoved(distance: dist))
+                    let scale = layer.size.width / 150.0
+                    viewModel.handleOnboardingEvent(.observe(grabbing: true, scale: scale))
+                    viewModel.handleOnboardingEvent(.observe(grabbing: false, scale: scale))
                 }
             }
     }
 
+    private var tutorialIcon: String {
+        switch viewModel.onboardingStep {
+        case .grabTutorial, .grabSuccess: return "hand.draw.fill"
+        case .zoomTutorial, .zoomSuccess: return "arrow.up.backward.and.arrow.down.forward"
+        case .shrinkTutorial, .shrinkHold: return "arrow.down.right.and.arrow.up.left"
+        default: return "hand.draw.fill"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "hand.draw.fill")
+            Image(systemName: tutorialIcon)
                 .font(.system(size: 32))
                 .foregroundColor(.white)
             Text(layer.title)
@@ -391,6 +539,13 @@ struct TutorialSceneCardView: View {
                 .stroke(layer.isSelected ? Color.blue.opacity(0.8) : Color.white.opacity(0.4), lineWidth: 2)
         )
         .overlay(
+            Group {
+                if viewModel.onboardingStep == .shrinkHold {
+                    ProgressCircleOverlay(duration: OnboardingThresholds.vanishHoldDuration)
+                }
+            }
+        )
+        .overlay(
             SelectedLayerOverlay(layer: layer, sceneStore: sceneStore, viewModel: viewModel)
         )
         .opacity(layer.isBeingRemoved ? 0.4 : 1.0)
@@ -398,6 +553,12 @@ struct TutorialSceneCardView: View {
         .gesture(dragGesture)
         .onTapGesture {
             sceneStore.selectLayer(layer.id)
+        }
+        .disintegrationEffect(isDeleted: snapEffect)
+        .onChange(of: viewModel.onboardingStep) { _, newStep in
+            if newStep == .virtualCameraPrompt {
+                snapEffect = true
+            }
         }
     }
 }
@@ -439,55 +600,51 @@ struct OnboardingWelcomeCard: View {
     }
 }
 
-// Virtual Camera Prompt Card
 struct VirtualCameraPromptCard: View {
     let viewModel: PreviewViewModel
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "video.fill")
-                .font(.system(size: 36))
-                .foregroundColor(.blue)
-            Text("You’ve got the moves")
-                .font(.system(.title3, design: .rounded).weight(.bold))
-                .foregroundColor(.white)
-            Text("Turn on AirStage’s virtual camera to use it in video calls, screen recordings, and live streams.")
-                .font(.system(.body, design: .rounded))
-                .foregroundColor(.white.opacity(0.85))
-                .multilineTextAlignment(.center)
-            HStack(spacing: 16) {
-                Button(action: {
-                    viewModel.handleOnboardingEvent(.virtualCameraPromptDismissed)
-                }) {
-                    Text("Maybe later")
-                        .font(.system(.body, design: .rounded).weight(.semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(16)
-                }
-                .buttonStyle(.plain)
+            Image(systemName: "video.badge.checkmark")
+                .font(.system(size: 42, weight: .semibold))
+                .foregroundStyle(.green)
 
-                Button(action: {
-                    viewModel.handleOnboardingEvent(.virtualCameraTurnOnTapped)
-                }) {
-                    Text("Turn it on")
-                        .font(.system(.body, design: .rounded).weight(.semibold))
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.white)
-                        .cornerRadius(16)
+            Text("You’re ready")
+                .font(.system(.title2, design: .rounded).weight(.bold))
+                .foregroundStyle(.white)
+
+            Text("AirStage can now appear as a camera source in calls, recordings, and live streams. Turn it on when you’re ready.")
+                .font(.system(.body, design: .rounded))
+                .foregroundStyle(.white.opacity(0.78))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                Button("Not now") {
+                    viewModel.handleOnboardingEvent(.virtualCameraPromptDismissed)
                 }
                 .buttonStyle(.plain)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.14))
+                .foregroundStyle(.white)
+                .clipShape(Capsule())
+
+                Button("Turn on AirStage") {
+                    viewModel.handleOnboardingEvent(.virtualCameraTurnOnTapped)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.white)
+                .foregroundStyle(.black)
+                .clipShape(Capsule())
             }
         }
         .padding(24)
-        .background(.ultraThinMaterial)
-        .cornerRadius(20)
-        .shadow(radius: 10)
-        .frame(width: 320)
+        .frame(width: 360)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .shadow(radius: 18)
     }
 }
 
@@ -502,10 +659,10 @@ struct OnboardingInstructionPill: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(.subheadline, design: .rounded).weight(.bold))
+                        .font(.system(.title3, design: .rounded).weight(.bold))
                         .foregroundColor(.white)
                     Text(bodyText)
-                        .font(.system(.caption, design: .rounded))
+                        .font(.system(.body, design: .rounded))
                         .foregroundColor(.white.opacity(0.8))
                 }
                 Spacer()
@@ -527,7 +684,7 @@ struct OnboardingInstructionPill: View {
             .background(.ultraThinMaterial)
             .cornerRadius(16)
             .shadow(radius: 8)
-            .frame(width: 340)
+            .frame(width: 360)
             .padding(.bottom, 20)
         }
     }
@@ -562,9 +719,9 @@ struct OnboardingSuccessToast: View {
             HStack(spacing: 12) {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.green)
-                    .font(.system(size: 20))
+                    .font(.system(size: 24))
                 Text(successLabel)
-                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .font(.system(.title3, design: .rounded).weight(.bold))
                     .foregroundColor(.white)
                 Spacer()
                 if step != .vanishSuccess {
@@ -596,6 +753,7 @@ struct OnboardingSuccessToast: View {
         switch step {
         case .grabSuccess: return "Nice!"
         case .zoomSuccess: return "Well done!"
+        case .vanishSuccess: return "You’re ready"
         default: return "Amazing!"
         }
     }
@@ -605,11 +763,10 @@ struct PreviewView: View {
     @ObservedObject var sceneStore: SceneStore
     @ObservedObject var viewModel: PreviewViewModel
 
-    @State private var showVanishSuccess: Bool = false
-
     var body: some View {
-        ZStack {
-            Color.clear
+        GeometryReader { proxy in
+            ZStack {
+                Color.clear
 
             // Render all layers
             ForEach(sceneStore.layers) { layer in
@@ -627,6 +784,14 @@ struct PreviewView: View {
                     DefaultCardView(layer: layer, sceneStore: sceneStore, viewModel: viewModel)
                         .position(layer.position)
                 }
+
+                if viewModel.disintegratedLayerIDs.contains(layer.id) {
+                    let side = viewModel.edgeDeleteState.side ?? .left
+                    EmitterView(side: side, isActive: true)
+                        .frame(width: layer.size.width, height: layer.size.height)
+                        .position(layer.position)
+                        .allowsHitTesting(false)
+                }
             }
 
             // Onboarding Overlay Cards
@@ -636,16 +801,59 @@ struct PreviewView: View {
                 VirtualCameraPromptCard(viewModel: viewModel)
             } else if viewModel.onboardingStep == .grabTutorial || viewModel.onboardingStep == .zoomTutorial || viewModel.onboardingStep == .shrinkTutorial || viewModel.onboardingStep == .shrinkHold {
                 OnboardingInstructionPill(step: viewModel.onboardingStep, viewModel: viewModel)
-            } else if viewModel.onboardingStep == .grabSuccess || viewModel.onboardingStep == .zoomSuccess {
+            } else if viewModel.onboardingStep == .grabSuccess || viewModel.onboardingStep == .zoomSuccess || viewModel.onboardingStep == .vanishSuccess {
                 OnboardingSuccessToast(step: viewModel.onboardingStep, viewModel: viewModel)
             }
 
-            if showVanishSuccess {
-                OnboardingSuccessToast(step: .vanishSuccess, viewModel: viewModel)
+            if let side = viewModel.edgeDeleteState.side {
+                EdgeDeleteZoneView(
+                    side: side,
+                    state: viewModel.edgeDeleteState
+                )
+                .position(edgeDeleteZonePosition(side: side, sceneBounds: viewModel.sceneBounds))
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                .zIndex(850)
             }
 
+            if viewModel.isDebugOverlayVisible {
+                DebugLayer(viewModel: viewModel)
+                    .allowsHitTesting(false)
+                    .zIndex(900)
+            }
+            
+            // Invisible toggle for debug overlay
+            Button("") {
+                viewModel.toggleDebugOverlay()
+            }
+            .keyboardShortcut("d", modifiers: [.command, .shift])
+            .opacity(0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+
+            // Visible debug toggle in dev/debug mode
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        viewModel.toggleDebugOverlay()
+                    }) {
+                        Image(systemName: viewModel.isDebugOverlayVisible ? "ladybug.fill" : "ladybug")
+                            .foregroundColor(viewModel.isDebugOverlayVisible ? .green : .white.opacity(0.7))
+                            .padding(8)
+                            .background(Color.black.opacity(0.5))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(viewModel.isDebugOverlayVisible ? "Hide debug coordinates" : "Show debug coordinates")
+                    .help(viewModel.isDebugOverlayVisible ? "Hide debug coordinates" : "Show debug coordinates")
+                    .padding()
+                }
+                Spacer()
+            }
+            .zIndex(1000)
+
             // Quick-Add Toolbar Overlay (only when onboarding is completed or welcome card is not blocking)
-            if viewModel.isToolbarVisible && (viewModel.onboardingStep == .completed || viewModel.onboardingStep == .welcome) {
+            if viewModel.shouldShowQuickAddToolbar {
                 VStack {
                     Spacer()
                     
@@ -689,7 +897,7 @@ struct PreviewView: View {
                         Button(action: { viewModel.quickAddPaste() }) {
                             HStack(spacing: 4) {
                                 Image(systemName: "doc.on.clipboard")
-                                Text("Paste")
+                                Text("Paste from clipboard")
                             }
                         }
                         .buttonStyle(.plain)
@@ -758,14 +966,7 @@ struct PreviewView: View {
         .onHover { hovered in
             viewModel.setHovered(hovered)
         }
-        .onChange(of: viewModel.onboardingStep) { _, newStep in
-            if newStep == .virtualCameraPrompt {
-                showVanishSuccess = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                    showVanishSuccess = false
-                }
-            }
-        }
+
         .onDrop(of: [.fileURL, .image], isTargeted: nil) { providers in
             let importer = ImageImporter(store: sceneStore)
             let handler = DropPasteHandler(importer: importer)
@@ -781,5 +982,39 @@ struct PreviewView: View {
                 }
             }
         }
+        .onAppear {
+            viewModel.updateCanvasSize(proxy.size)
+        }
+        .onChange(of: proxy.size) { _, newSize in
+            viewModel.updateCanvasSize(newSize)
+        }
+        }
+    }
+
+    private func edgeDeleteZonePosition(side: EdgeDeleteSide, sceneBounds: CGRect) -> CGPoint {
+        switch side {
+        case .left:
+            return CGPoint(x: sceneBounds.minX + 42, y: sceneBounds.midY)
+        case .right:
+            return CGPoint(x: sceneBounds.maxX - 42, y: sceneBounds.midY)
+        }
+    }
+}
+
+// Progress Circle Overlay for Shrink-to-Vanish
+struct ProgressCircleOverlay: View {
+    let duration: TimeInterval
+    @State private var progress: CGFloat = 0
+
+    var body: some View {
+        Circle()
+            .trim(from: 0, to: progress)
+            .stroke(Color.white, lineWidth: 6)
+            .frame(width: 60, height: 60)
+            .rotationEffect(.degrees(-90))
+            .animation(.linear(duration: duration), value: progress)
+            .onAppear {
+                progress = 1.0
+            }
     }
 }

@@ -1,7 +1,32 @@
+# Swift / Xcode build artifacts
 .build/
-.DS_Store
-__MACOSX/
-._*
-.swiftpm/
 DerivedData/
+.swiftpm/
 *.xcuserdata
+*.xcworkspace
+*.dSYM/
+*.o
+*.pcm
+
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+__MACOSX/
+
+# Archive files
+*.zip
+*.tar.gz
+*.tgz
+*.dmg
+
+# IDE / Editor
+.idea/
+.vscode/
+.claude/
+.qodo/
+
+# Logs & temp test outputs
+*.log
+test.log
+test_output.log

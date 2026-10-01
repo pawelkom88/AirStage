@@ -7,11 +7,13 @@ public struct SceneLayer: Identifiable, Equatable {
         case image
         case windowCapture
         case tutorial
+        case shelfItem
     }
 
     public let id: UUID
     public var kind: Kind
     public var title: String
+    public var subtitle: String
     public var position: CGPoint
     public var size: CGSize
     public var scale: CGFloat
@@ -25,6 +27,7 @@ public struct SceneLayer: Identifiable, Equatable {
         id: UUID = UUID(),
         kind: Kind,
         title: String,
+        subtitle: String = "",
         position: CGPoint = .zero,
         size: CGSize = .zero,
         scale: CGFloat = 1.0,
@@ -37,6 +40,7 @@ public struct SceneLayer: Identifiable, Equatable {
         self.id = id
         self.kind = kind
         self.title = title
+        self.subtitle = subtitle
         self.position = position
         self.size = size
         self.scale = scale

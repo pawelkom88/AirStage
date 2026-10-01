@@ -4,20 +4,19 @@ import XCTest
 @MainActor
 final class EdgeDeleteTests: XCTestCase {
 
-    func testEdgeDeleteBeginsHoveringWhenLayerEntersLeftZone() {
+    func testEdgeDeleteBeginsArmingWhenLayerEntersLeftZone() {
         let controller = EdgeDeleteController(configuration: .init())
 
         controller.updateDraggedLayer(
             id: UUID(),
             frame: CGRect(x: 40, y: 200, width: 120, height: 120),
             sceneBounds: CGRect(x: 0, y: 0, width: 800, height: 600),
-            isOnboardingCompleted: true,
-            isTutorialLayer: false,
+            isAllowed: true,
             onDeleteReady: { _, _ in XCTFail("Should not delete immediately") }
         )
 
-        guard case .hovering(let side, _, _) = controller.state else {
-            return XCTFail("Expected hovering state")
+        guard case .arming(let side, _, _) = controller.state else {
+            return XCTFail("Expected arming state")
         }
 
         XCTAssertEqual(side, .left)
@@ -30,8 +29,7 @@ final class EdgeDeleteTests: XCTestCase {
             id: UUID(),
             frame: CGRect(x: 20, y: 200, width: 120, height: 120),
             sceneBounds: CGRect(x: 0, y: 0, width: 800, height: 600),
-            isOnboardingCompleted: false,
-            isTutorialLayer: false,
+            isAllowed: false,
             onDeleteReady: { _, _ in XCTFail("Should not delete during onboarding") }
         )
 
@@ -45,16 +43,17 @@ final class EdgeDeleteTests: XCTestCase {
             id: UUID(),
             frame: CGRect(x: 20, y: 200, width: 120, height: 120),
             sceneBounds: CGRect(x: 0, y: 0, width: 800, height: 600),
-            isOnboardingCompleted: true,
-            isTutorialLayer: true,
+            isAllowed: false,
             onDeleteReady: { _, _ in XCTFail("Should not delete tutorial layer") }
         )
 
         XCTAssertEqual(controller.state, .idle)
     }
 
-    func testEdgeDeleteCancelsWhenLayerLeavesZone() {
-        let controller = EdgeDeleteController()
+    func testEdgeDeleteJitterTolerance() async throws {
+        var config = EdgeDeleteController.Configuration()
+        config.jitterTolerance = 0.05
+        let controller = EdgeDeleteController(configuration: config)
         let id = UUID()
         let bounds = CGRect(x: 0, y: 0, width: 800, height: 600)
 
@@ -62,24 +61,29 @@ final class EdgeDeleteTests: XCTestCase {
             id: id,
             frame: CGRect(x: 20, y: 200, width: 120, height: 120),
             sceneBounds: bounds,
-            isOnboardingCompleted: true,
-            isTutorialLayer: false,
+            isAllowed: true,
             onDeleteReady: { _, _ in XCTFail("Should not delete") }
         )
 
+        XCTAssertTrue(controller.state.isArmed)
+
+        // Move out of bounds briefly
         controller.updateDraggedLayer(
             id: id,
             frame: CGRect(x: 300, y: 200, width: 120, height: 120),
             sceneBounds: bounds,
-            isOnboardingCompleted: true,
-            isTutorialLayer: false,
+            isAllowed: true,
             onDeleteReady: { _, _ in XCTFail("Should not delete") }
         )
 
-        XCTAssertEqual(controller.state, .idle)
+        XCTAssertTrue(controller.state.isArmed, "State should not drop immediately because of jitter tolerance")
+
+        try await Task.sleep(nanoseconds: 100_000_000) // wait longer than 0.05s tolerance
+
+        XCTAssertEqual(controller.state, .idle, "Should be idle after jitter tolerance expires")
     }
 
-    func testEdgeDeleteBeginsHoveringWhenLayerEntersRightZone() {
+    func testEdgeDeleteBeginsArmingWhenLayerEntersRightZone() {
         let controller = EdgeDeleteController()
         let id = UUID()
 
@@ -87,13 +91,12 @@ final class EdgeDeleteTests: XCTestCase {
             id: id,
             frame: CGRect(x: 720, y: 200, width: 120, height: 120),
             sceneBounds: CGRect(x: 0, y: 0, width: 800, height: 600),
-            isOnboardingCompleted: true,
-            isTutorialLayer: false,
+            isAllowed: true,
             onDeleteReady: { _, _ in XCTFail("Should not delete immediately") }
         )
 
-        guard case .hovering(let side, _, _) = controller.state else {
-            return XCTFail("Expected hovering state")
+        guard case .arming(let side, _, _) = controller.state else {
+            return XCTFail("Expected arming state")
         }
 
         XCTAssertEqual(side, .right)
@@ -107,22 +110,20 @@ final class EdgeDeleteTests: XCTestCase {
             id: id,
             frame: CGRect(x: 1120, y: 200, width: 120, height: 120),
             sceneBounds: CGRect(x: 0, y: 0, width: 1200, height: 800),
-            isOnboardingCompleted: true,
-            isTutorialLayer: false,
+            isAllowed: true,
             onDeleteReady: { _, _ in XCTFail("Should not delete immediately") }
         )
 
-        guard case .hovering(let side, _, _) = controller.state else {
-            return XCTFail("Expected hovering on resized right edge")
+        guard case .arming(let side, _, _) = controller.state else {
+            return XCTFail("Expected arming on resized right edge")
         }
 
         XCTAssertEqual(side, .right)
     }
 
-    func testEdgeDeleteTransitionsToArmedAndDeletesAsync() async throws {
+    func testEdgeDeleteDeletesAsync() async throws {
         var config = EdgeDeleteController.Configuration()
-        config.revealDelay = 0.005
-        config.deleteDelayAfterReveal = 0.005
+        config.deleteDelay = 0.01
         
         let controller = EdgeDeleteController(configuration: config)
         let id = UUID()
@@ -130,12 +131,11 @@ final class EdgeDeleteTests: XCTestCase {
         
         let expectation = XCTestExpectation(description: "Delete callback fired")
         
-        await controller.updateDraggedLayer(
+        controller.updateDraggedLayer(
             id: id,
             frame: CGRect(x: 20, y: 200, width: 120, height: 120),
             sceneBounds: bounds,
-            isOnboardingCompleted: true,
-            isTutorialLayer: false,
+            isAllowed: true,
             onDeleteReady: { deletedId, side in
                 XCTAssertEqual(deletedId, id)
                 XCTAssertEqual(side, .left)
@@ -143,17 +143,9 @@ final class EdgeDeleteTests: XCTestCase {
             }
         )
         
-        let state = await controller.state
-        guard case .hovering = state else {
-            return XCTFail("Expected hovering state, got \(state)")
-        }
-        
-        // Wait for timers to fire
-        try await Task.sleep(nanoseconds: 50_000_000) // 50ms
-        
-        let finalState = await controller.state
-        guard case .armed = finalState else {
-            return XCTFail("Expected armed state, got \(finalState)")
+        let state = controller.state
+        guard case .arming = state else {
+            return XCTFail("Expected arming state, got \(state)")
         }
         
         await fulfillment(of: [expectation], timeout: 1.0)
@@ -164,7 +156,7 @@ final class EdgeDeleteTests: XCTestCase {
         let id = UUID()
         
         controller.forceArmForTesting(id: id, side: .left)
-        XCTAssertEqual(controller.state, .armed(side: .left, layerID: id, armedAt: controller.state.enteredAt ?? Date()))
+        XCTAssertEqual(controller.state, .arming(side: .left, layerID: id, startedAt: controller.state.enteredAt ?? Date()))
         
         var callbackFired = false
         controller.forceDeleteReadyForTesting(id: id, side: .right) { deletedId, side in
@@ -173,12 +165,12 @@ final class EdgeDeleteTests: XCTestCase {
             callbackFired = true
         }
         XCTAssertTrue(callbackFired)
-        XCTAssertEqual(controller.state, .armed(side: .right, layerID: id, armedAt: controller.state.enteredAt ?? Date()))
+        XCTAssertEqual(controller.state, .arming(side: .right, layerID: id, startedAt: controller.state.enteredAt ?? Date()))
     }
 
     func testVMIntegratesWithEdgeDeleteController() {
         let store = SceneStore()
-        let vm = PreviewViewModel(
+        _ = PreviewViewModel(
             permissionService: FakeCameraPermissionService(status: .authorized),
             sceneStore: store
         )
@@ -201,16 +193,14 @@ final class EdgeDeleteTests: XCTestCase {
         
         XCTAssertEqual(vmCompleted.edgeDeleteState, .idle)
         
-        // Update to trigger hovering
         vmCompleted.updateEdgeDeleteForDraggedLayer(layer)
         
-        guard case .hovering(let side, let layerID, _) = vmCompleted.edgeDeleteState else {
-            return XCTFail("Expected hovering state, got \(vmCompleted.edgeDeleteState)")
+        guard case .arming(let side, let layerID, _) = vmCompleted.edgeDeleteState else {
+            return XCTFail("Expected arming state, got \(vmCompleted.edgeDeleteState)")
         }
         XCTAssertEqual(side, .left)
         XCTAssertEqual(layerID, id)
         
-        // Cancel
         vmCompleted.cancelEdgeDeleteIfNeeded()
         XCTAssertEqual(vmCompleted.edgeDeleteState, .idle)
     }
@@ -218,7 +208,6 @@ final class EdgeDeleteTests: XCTestCase {
     func testVMOnboardingGatingForEdgeDelete() {
         UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
         let store = SceneStore()
-        // Onboarding is NOT completed by default
         let vm = PreviewViewModel(
             permissionService: FakeCameraPermissionService(status: .authorized),
             sceneStore: store
@@ -261,32 +250,35 @@ final class EdgeDeleteTests: XCTestCase {
     func testBadgePositioningUsesDraggedCardFrameMidYClamped() {
         let sceneBounds = CGRect(x: 0, y: 0, width: 800, height: 600)
         
-        // Unclamped scenario
-        let cardFrameUnclamped = CGRect(x: 40, y: 200, width: 120, height: 120) // midY = 260
+        let cardFrameUnclamped = CGRect(x: 40, y: 200, width: 120, height: 120)
         let posUnclampedLeft = EdgeDeleteState.badgePosition(side: .left, cardFrame: cardFrameUnclamped, sceneBounds: sceneBounds)
-        XCTAssertEqual(posUnclampedLeft.y, 260, "Should use draggedCardFrame.midY")
+        XCTAssertEqual(posUnclampedLeft.y, 260)
         XCTAssertEqual(posUnclampedLeft.x, sceneBounds.minX + 56)
         
         let posUnclampedRight = EdgeDeleteState.badgePosition(side: .right, cardFrame: cardFrameUnclamped, sceneBounds: sceneBounds)
         XCTAssertEqual(posUnclampedRight.x, sceneBounds.maxX - 56)
         
-        // Clamped top scenario
-        let cardFrameTop = CGRect(x: 40, y: -50, width: 120, height: 120) // midY = 10
+        let cardFrameTop = CGRect(x: 40, y: -50, width: 120, height: 120)
         let posTop = EdgeDeleteState.badgePosition(side: .left, cardFrame: cardFrameTop, sceneBounds: sceneBounds)
-        XCTAssertEqual(posTop.y, 60, "Should clamp to sceneBounds.minY + 60")
+        XCTAssertEqual(posTop.y, 60)
         
-        // Clamped bottom scenario
-        let cardFrameBottom = CGRect(x: 40, y: 600, width: 120, height: 120) // midY = 660
+        let cardFrameBottom = CGRect(x: 40, y: 600, width: 120, height: 120)
         let posBottom = EdgeDeleteState.badgePosition(side: .left, cardFrame: cardFrameBottom, sceneBounds: sceneBounds)
-        XCTAssertEqual(posBottom.y, 540, "Should clamp to sceneBounds.maxY - 60")
+        XCTAssertEqual(posBottom.y, 540)
+    }
+
+    func testCommitProgressClampsToOne() {
+        let startedAt = Date().addingTimeInterval(-5.0)
+        let state = EdgeDeleteState.arming(side: .left, layerID: UUID(), startedAt: startedAt)
+        let progress = commitProgress(for: state, now: Date(), deleteDelay: 1.0)
+        XCTAssertEqual(progress, 1.0)
     }
 }
 
 private extension EdgeDeleteState {
     var enteredAt: Date? {
         switch self {
-        case .hovering(_, _, let date): return date
-        case .armed(_, _, let date): return date
+        case .arming(_, _, let date): return date
         default: return nil
         }
     }

@@ -18,7 +18,7 @@ final class IntegrationRegressionTests: XCTestCase {
     func testIntegrationAddNoteEditDragRemoveOutside() {
         let store = SceneStore()
         let permission = FakeCameraPermissionService(status: .authorized)
-        let vm = PreviewViewModel(permissionService: permission, sceneStore: store)
+        _ = PreviewViewModel(permissionService: permission, sceneStore: store)
         let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
 
         // 1. Add note

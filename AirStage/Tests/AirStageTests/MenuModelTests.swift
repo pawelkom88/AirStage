@@ -13,6 +13,8 @@ final class MenuModelTests: XCTestCase {
         XCTAssertTrue(ids.contains(.removeLayer))
         XCTAssertTrue(ids.contains(.showPreview))
         XCTAssertTrue(ids.contains(.settings))
+        XCTAssertTrue(ids.contains(.debugOverlay))
+        XCTAssertFalse(ids.contains(.presenterShelf))
         XCTAssertTrue(ids.contains(.quit))
     }
 
@@ -84,6 +86,16 @@ final class MenuModelTests: XCTestCase {
         model.select(.quit)
 
         XCTAssertEqual(emittedIntent, .quit)
+    }
+
+    func testSelectingDebugOverlayEmitsIntent() {
+        let model = MenuModel()
+        var emittedIntent: MenuIntent?
+        model.onIntent = { emittedIntent = $0 }
+
+        model.select(.debugOverlay)
+
+        XCTAssertEqual(emittedIntent, .toggleDebugOverlay)
     }
 
     func testSelectingShareImageEmitsIntent() {
@@ -179,6 +191,8 @@ final class MenuModelTests: XCTestCase {
         XCTAssertTrue(ids.contains(.shareImage))
         XCTAssertTrue(ids.contains(.shareWindowOrScreen))
         XCTAssertTrue(ids.contains(.showPreview))
+        XCTAssertTrue(ids.contains(.debugOverlay))
+        XCTAssertFalse(ids.contains(.presenterShelf))
         XCTAssertTrue(ids.contains(.quit))
     }
 

@@ -1290,3 +1290,114 @@ Debug logs added:
 Assumptions/decisions:
 - The fallback `.ultraThinMaterial` pill is retained inside `#else` availability checks for macOS versions below 26.
 - Particles drift linearly toward the dynamic trash icon offset rather than symmetrically spreading in -150...150 range.
+
+### Slice — Edge Delete Badge Progress Indication Pass
+
+Status: Complete — 2026-07-06
+
+Files changed:
+- `AirStage/Sources/AirStage/Preview/EdgeDeleteState.swift` — Added `dwellProgress` and `commitProgress` public free functions using existing state timestamps.
+- `AirStage/Sources/AirStage/Preview/EdgeDeleteController.swift` — Made `configuration` public to be accessible to `EdgeDeleteBadge` view rendering logic.
+- `AirStage/Sources/AirStage/Preview/PreviewViewModel.swift` — Exposed `edgeDeleteConfiguration` computed property. Updated `debugOverlaySnapshot` to calculate and provide live dwell/commit percentages.
+- `AirStage/Sources/AirStageApp/PreviewView.swift` — Replaced static `EdgeDeleteBadge` view implementation with a dynamic concentric ring state-machine presentation. Added a `onChange` hook triggering an `NSHapticFeedbackManager` `perform(.generic)` when transitioning to `isArmed`.
+- `AirStage/Sources/AirStage/Debug/DebugDataStructures.swift` & `DebugOverlayState.swift` — Updated `EdgeDeleteDebugInfo` structure to represent `dwellProgress` and `commitProgress`.
+- `AirStage/Sources/AirStage/Debug/DebugLayer.swift` — Formatted output for debug overlay to show `%` strings or `—` instead of the legacy structure.
+- `AirStage/Tests/AirStageTests/EdgeDeleteTests.swift` — Added test cases for `dwellProgress` and `commitProgress` confirming arithmetic based on `revealDelay` and `deleteDelayAfterReveal`. Removed `EdgeDeleteZoneView.swift`.
+
+Tests added:
+- `testDwellProgressAtHalfRevealDelay` ✓
+- `testCommitProgressClampsToOne` ✓
+
+Commands run:
+- `swift test` → 165 tests passed, 0 failures
+
+Debug logs added:
+- None
+
+Assumptions/decisions:
+- Time-based progress animations correctly trigger inside `.hovering` and `.armed` respectively. The fallback `.ultraThinMaterial` structure has also been absorbed inside the `badgeCore` of `EdgeDeleteBadge`.
+
+### Patch — Fix Bugs 1, 2, 3 (Debug Menu, Note Edits, Edge Delete)
+
+Status: Complete — 2026-07-06
+
+Files changed:
+- `PreviewView.swift` — Replaced floating debug button with menu action; fixed `TextField` editability via `@FocusState`; replaced shrink-to-delete with edge-delete interactions.
+- `PreviewViewModel.swift` — Removed virtual camera prompt and shrink timers; added integration with `EdgeDeleteController` and explicit `completed` state logic.
+- `OnboardingStateMachine.swift` — Replaced `shrinkTutorial`/`shrinkHold` steps with `deleteTutorial` and `deleteHold`.
+- `EdgeDeleteController.swift` — Added boundary detection for left/right screen edges for dragging to delete.
+- `EdgeDeleteTests.swift` — Tests for boundary detection and integration.
+- Various test files (e.g. `PreviewViewModelTests.swift`, `OnboardingStateMachineTests.swift`) — Updated to align with the new state machine.
+
+Tests added/updated:
+- Fixed test suites to reflect removal of `vanishHold` and virtual camera prompt logic.
+- `EdgeDeleteTests` verifies boundary threshold and zone detection.
+
+Commands run:
+- `swift test` → Build complete, 157 tests passed, 0 failures
+
+Manual notes:
+- Debug overlay toggle now accessible via system menu instead of a floating bug icon.
+- Text notes are immediately focused and editable when clicked, resolving the "not properly editable" bug.
+- Drag-to-delete now triggers reliably at screen edges and provides immediate feedback.
+- Completed all user-reported bug fixes and migrated the remaining legacy "shrink" states from the codebase.
+
+### Patch — Fix Bugs Image Frame, Edge Delete Disintegration, and Native Focus Glow
+
+Status: Complete — 2026-07-06
+
+Files changed:
+- `ImageImporter.swift` — Added proportional initial sizing logic based on the actual imported NSImage aspect ratio to ensure frames perfectly fit the image.
+- `PreviewView.swift` — Modified DragGesture corner handles inside `SelectedLayerOverlay` to perform proportional resizing for `.image` layers, so the border frame remains the same aspect ratio as the content when resized.
+- `PreviewView.swift` — Fixed a bug where `snapEffect` state was ignored for tutorial layer edge-deletes by switching `TutorialSceneCardView` to use the global `viewModel.disintegratedLayerIDs`.
+- `AppleIntelligenceGlowEffect.swift` — New file ported from `MAC-SHORTCUTS` containing the custom Siri-like `AngularGradient` glow effect component driven by a timer.
+- `PreviewView.swift` — Added `AppleIntelligenceGlowEffect` to `TutorialSceneCardView`, `ImageCardView`, `DefaultCardView`, and `StickyNoteView` to show a blue/cyan glow when being dragged (`startPosition != .zero`) and an orange/pink glow on the tutorial card when ready to zoom (`onboardingStep == .zoomTutorial`).
+
+Tests added/updated:
+- No new tests were strictly required as these were purely visual effect refinements and proportional bounds constraints, but all existing 157 tests continue to pass.
+
+Commands run:
+- `swift test` → Build complete, 157 tests passed, 0 failures
+
+Debug logs added:
+- None
+
+Assumptions/decisions:
+- We assume that all images should preserve their original aspect ratio, which is standard for presenting images to avoid distortion or unwanted cropping inside AirStage scenes.
+
+Remaining risks:
+- None known.
+
+### Patch — Presenter Shelf & Fullscreen
+
+Status: Complete — 2026-07-06
+
+Files changed:
+- `AirStage/Sources/AirStage/Scene/SceneLayer.swift` — added `.shelfItem` layer kind and `subtitle` property.
+- `AirStage/Sources/AirStage/Scene/SceneStore.swift` — added `addShelfItem` method, added limit switch coverage for `.shelfItem`.
+- `AirStage/Sources/AirStage/PresenterShelf/PresenterShelfModel.swift` — implemented `make(from: URL)` and `makeFolder(from: URL)`.
+- `AirStage/Sources/AirStage/PresenterShelf/PresenterShelfStore.swift` — implemented list appending, filtering, clearing.
+- `AirStage/Sources/AirStage/PresenterShelf/PresenterShelfView.swift` — updated layout constraints and integrated `.searchable`, empty states, and file addition buttons via `Menu`.
+- `AirStage/Sources/AirStage/Preview/PreviewViewModel.swift` — integrated `PreviewFullscreenController` and Shelf file/folder additions, added `isHovered` state.
+- `AirStage/Sources/AirStage/Preview/PreviewFullscreenController.swift` — implemented window frame animation toggling bounds to the screen frame.
+- `AirStage/Sources/AirStageApp/PreviewWindowController.swift` — attached fullscreen controller and intercepted `Escape` key for exiting fullscreen or shelf.
+- `AirStage/Sources/AirStageApp/PreviewView.swift` — added Top-Right fullscreen toggle overlay button, mapped `.isHovered` interactions.
+- `AirStage/Tests/AirStageTests/PresenterShelfStoreTests.swift` — added robust filtering, appending and clearing tests for PresenterShelfStore.
+
+Tests added/updated:
+- `testShelfItemStoreAppending` ✓
+- `testShelfItemStoreFilteringAndSelection` ✓
+- `testShelfItemStoreClearing` ✓
+- Verified SceneStore limit tests handled unknown items.
+
+Commands run:
+- `swift test` → Build complete, 160 tests passed, 0 failures.
+
+Debug logs added:
+- `AppLog.menu.info("Adding presenter shelf files")`
+- `AppLog.menu.info("Adding presenter shelf folder")`
+- `AppLog.menu.info("Presenting shelf item: ...")`
+
+Assumptions/decisions:
+- File additions mock out `NSOpenPanel` as a direct UI element within `PreviewViewModel` since macOS UI constraints tightly couple window modals to presentation logic.
+- Fullscreen takes advantage of AppKit's frame animations to morph the window borders directly to `visibleFrame`, overriding default `NSWindow` fullscreen functionality to preserve overlay continuity without spaces switching.

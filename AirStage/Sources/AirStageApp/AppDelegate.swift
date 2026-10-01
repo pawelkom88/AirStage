@@ -58,9 +58,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch intent {
         case .showPreview:
             showPreview()
-        case .presenterShelf:
-            showPreview()
-            previewWindowController?.togglePresenterShelf()
         case .addNote:
             _ = sceneStore.addNote(
                 title: "Sticky Note",
@@ -75,6 +72,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .settings:
             AppLog.menu.info("Settings requested")
             showSettings()
+        case .toggleDebugOverlay:
+            let isVisible = settingsStore.debugOverlay
+            settingsStore.debugOverlay = !isVisible
         case .quit:
             AppLog.app.info("Quit requested")
             NSApplication.shared.terminate(nil)

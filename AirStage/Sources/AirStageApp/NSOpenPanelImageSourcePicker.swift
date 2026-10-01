@@ -11,6 +11,7 @@ public final class NSOpenPanelImageSourcePicker: ImageSourcePicker {
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowedContentTypes = [.image]
+        panel.level = .floating
 
         panel.begin { response in
             if response == .OK {

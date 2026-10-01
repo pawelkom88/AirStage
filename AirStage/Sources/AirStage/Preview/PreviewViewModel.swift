@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import OSLog
 import CoreVideo
+import AppKit
 
 /// Observable state for the preview window.
 /// Kept free of AppKit/SwiftUI so it can be unit-tested directly.
@@ -20,6 +21,8 @@ public final class PreviewViewModel: ObservableObject {
             onToolbarVisibilityChange?(isToolbarVisible)
         }
     }
+    
+    @Published public var isHovered: Bool = false
 
     @Published public var toolbarErrorMessage: String?
 
@@ -49,6 +52,7 @@ public final class PreviewViewModel: ObservableObject {
     @Published public private(set) var edgeDeleteState: EdgeDeleteState = .idle
     @Published public var draggedCardFrame: CGRect?
     private let edgeDeleteController = EdgeDeleteController()
+    public var edgeDeleteConfiguration: EdgeDeleteController.Configuration { edgeDeleteController.configuration }
     private var vanishHoldTimers: [UUID: Timer] = [:]
 
     /// Called whenever cameraState changes.
@@ -74,6 +78,7 @@ public final class PreviewViewModel: ObservableObject {
     private var onboardingMachine: OnboardingStateMachine
     
     @Published public var presenterShelfStore: PresenterShelfStore
+    @Published public var previewFullscreenController: PreviewFullscreenController
 
     @MainActor
     public init(
@@ -101,6 +106,7 @@ public final class PreviewViewModel: ObservableObject {
         self.onboardingMachine = machine
         self.onboardingStep = machine.currentStep
         self.presenterShelfStore = PresenterShelfStore()
+        self.previewFullscreenController = PreviewFullscreenController()
 
         if let store = sceneStore {
             self.gestureLayerController = GestureLayerController(sceneStore: store, sceneBounds: canvasGeometry.sceneBounds)
@@ -126,37 +132,12 @@ public final class PreviewViewModel: ObservableObject {
                 guard let self = self else { return }
                 let hasTutorial = layers.contains(where: { $0.kind == .tutorial })
                 if !hasTutorial {
-                    if self.onboardingStep == .shrinkTutorial || self.onboardingStep == .shrinkHold {
+                    if self.onboardingStep == .deleteTutorial || self.onboardingStep == .deleteHold {
                         self.handleOnboardingEvent(.vanishHoldCompleted)
                     }
                 }
 
-                // Shrink-to-delete logic for normal layers
-                for layer in layers {
-                    if layer.kind == .tutorial { continue }
-                    
-                    let baseWidth: CGFloat
-                    switch layer.kind {
-                    case .image: baseWidth = 200
-                    case .windowCapture: baseWidth = 240
-                    default: baseWidth = 150
-                    }
-                    
-                    let scale = layer.size.width / baseWidth
-                    if scale <= 0.4 {
-                        self.startVanishHold(for: layer.id)
-                    } else {
-                        self.cancelVanishHold(for: layer.id)
-                    }
-                }
-                
-                // Clean up vanish states for any removed layers
-                let activeIDs = Set(layers.map { $0.id })
-                for id in self.vanishHoldingLayerIDs {
-                    if !activeIDs.contains(id) {
-                        self.cancelVanishHold(for: id)
-                    }
-                }
+
             }
             .store(in: &cancellables)
 
@@ -240,6 +221,7 @@ public final class PreviewViewModel: ObservableObject {
         isToolbarVisible && isOnboardingCompleted
     }
 
+    @MainActor
     public func setHovered(_ hovered: Bool) {
         guard onboardingStep == .completed else {
             isToolbarVisible = false
@@ -290,6 +272,44 @@ public final class PreviewViewModel: ObservableObject {
         onQuickAddPaste?()
     }
 
+    // MARK: - Presenter Shelf Actions
+
+    @MainActor
+    public func addPresenterShelfFiles() {
+        AppLog.menu.info("Adding presenter shelf files")
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        if panel.runModal() == .OK {
+            let newItems = panel.urls.map { PresenterShelfItem.make(from: $0) }
+            presenterShelfStore.addItems(newItems)
+        }
+    }
+
+    @MainActor
+    public func addPresenterShelfFolder() {
+        AppLog.menu.info("Adding presenter shelf folder")
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        if panel.runModal() == .OK {
+            let newItems = panel.urls.map { PresenterShelfItem.makeFolder(from: $0) }
+            presenterShelfStore.addItems(newItems)
+        }
+    }
+
+    @MainActor
+    public func togglePreviewFullscreen() {
+        previewFullscreenController.toggleFullscreen()
+    }
+
+    @MainActor
+    public func attachPreviewWindow(_ window: NSWindow) {
+        previewFullscreenController.attach(to: window)
+    }
+
     // MARK: - Onboarding
 
     public func handleOnboardingEvent(_ event: OnboardingEvent) {
@@ -297,14 +317,7 @@ public final class PreviewViewModel: ObservableObject {
         let command = onboardingMachine.handle(event)
         onboardingStep = onboardingMachine.currentStep
 
-        if onboardingStep == .shrinkHold && oldStep != .shrinkHold {
-            DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingThresholds.vanishHoldDuration) { [weak self] in
-                guard let self = self else { return }
-                if self.onboardingStep == .shrinkHold {
-                    self.handleOnboardingEvent(.vanishHoldCompleted)
-                }
-            }
-        }
+
 
         if onboardingStep == .vanishSuccess && oldStep != .vanishSuccess {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
@@ -368,9 +381,9 @@ public final class PreviewViewModel: ObservableObject {
                 size: CGSize(width: 150, height: 150)
             )
 
-        case .shrinkTutorial, .shrinkHold:
+        case .deleteTutorial, .deleteHold:
             return TutorialCardTemplate(
-                title: "Shrink me",
+                title: "Delete me",
                 position: CGPoint(x: 320, y: 240),
                 size: CGSize(width: 150, height: 150)
             )
@@ -437,8 +450,8 @@ public final class PreviewViewModel: ObservableObject {
                 newTitle = "Grab me"
             case .zoomTutorial, .zoomSuccess:
                 newTitle = "Zoom me"
-            case .shrinkTutorial, .shrinkHold:
-                newTitle = "Shrink me"
+            case .deleteTutorial, .deleteHold:
+                newTitle = "Delete me"
             default:
                 newTitle = "Tutorial"
             }
@@ -583,27 +596,19 @@ public final class PreviewViewModel: ObservableObject {
         switch edgeDeleteState {
         case .idle:
             deleteStateDesc = "idle"
-        case .hovering:
-            deleteStateDesc = "hovering"
-        case .armed:
-            deleteStateDesc = "armed"
+        case .arming:
+            deleteStateDesc = "arming"
         case .disintegrating:
             deleteStateDesc = "disintegrating"
         }
         
-        let sideDesc: String?
-        if let side = edgeDeleteState.side {
-            sideDesc = (side == .left ? "left" : "right")
-        } else {
-            sideDesc = nil
-        }
+        let dwell = 0.0 // Removed
+        let commit = AirStage.commitProgress(for: edgeDeleteState, now: Date(), deleteDelay: edgeDeleteConfiguration.deleteDelay)
         
         let edgeInfo = EdgeDeleteDebugInfo(
             stateDescription: deleteStateDesc,
-            side: sideDesc,
-            layerID: edgeDeleteState.layerID,
-            deleteZoneWidth: 96,
-            sceneBounds: sceneBounds
+            dwellProgress: dwell,
+            commitProgress: commit
         )
 
         return DebugOverlayState(
@@ -785,7 +790,7 @@ public final class PreviewViewModel: ObservableObject {
         let targetScale: CGFloat?
         if onboardingStep == .zoomTutorial {
             targetScale = (onboardingMachine.zoomBaselineScale ?? normalizedScale) * 1.15
-        } else if onboardingStep == .shrinkTutorial || onboardingStep == .shrinkHold {
+        } else if onboardingStep == .deleteTutorial || onboardingStep == .deleteHold {
             targetScale = (onboardingMachine.shrinkBaselineScale ?? normalizedScale) * 0.85
         } else {
             targetScale = nil
@@ -793,7 +798,7 @@ public final class PreviewViewModel: ObservableObject {
         
         self.debugOnboarding = OnboardingDebugInfo(
             step: onboardingMachine.currentStep.rawValue,
-            baselineScale: onboardingStep == .zoomTutorial ? onboardingMachine.zoomBaselineScale : (onboardingStep == .shrinkTutorial || onboardingStep == .shrinkHold ? onboardingMachine.shrinkBaselineScale : nil),
+            baselineScale: onboardingStep == .zoomTutorial ? onboardingMachine.zoomBaselineScale : (onboardingStep == .deleteTutorial || onboardingStep == .deleteHold ? onboardingMachine.shrinkBaselineScale : nil),
             currentScale: normalizedScale,
             targetScale: targetScale,
             successFrames: onboardingMachine.successFrameCount,
@@ -841,12 +846,16 @@ public final class PreviewViewModel: ObservableObject {
         )
         self.draggedCardFrame = frame
 
+        let isTutorial = layer.kind == .tutorial
+        let isAllowed = isTutorial ? 
+            (onboardingStep == .deleteTutorial || onboardingStep == .deleteHold) : 
+            (onboardingStep == .completed)
+
         edgeDeleteController.updateDraggedLayer(
             id: layer.id,
             frame: frame,
             sceneBounds: sceneBounds,
-            isOnboardingCompleted: onboardingStep == .completed,
-            isTutorialLayer: layer.kind == .tutorial
+            isAllowed: isAllowed
         ) { [weak self] id, side in
             self?.beginDisintegrationAndDelete(layerID: id, side: side)
         }

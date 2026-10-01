@@ -7,6 +7,7 @@ public final class PresenterShelfStore: ObservableObject {
     @Published public var selectedCategory: PresenterShelfCategory = .deck
     @Published public var selectedItemID: UUID?
     @Published public private(set) var items: [PresenterShelfItem]
+    @Published public var searchQuery: String = ""
 
     public init(items: [PresenterShelfItem] = PresenterShelfItem.mockItems) {
         self.items = items
@@ -14,7 +15,12 @@ public final class PresenterShelfStore: ObservableObject {
     }
 
     public var filteredItems: [PresenterShelfItem] {
-        items.filter { $0.category == selectedCategory }
+        items.filter { item in
+            guard item.category == selectedCategory else { return false }
+            if searchQuery.isEmpty { return true }
+            return item.title.localizedCaseInsensitiveContains(searchQuery)
+                || item.subtitle.localizedCaseInsensitiveContains(searchQuery)
+        }
     }
 
     public var selectedItem: PresenterShelfItem? {
@@ -57,6 +63,16 @@ public final class PresenterShelfStore: ObservableObject {
 
     public func setItems(_ nextItems: [PresenterShelfItem]) {
         items = nextItems
+        ensureValidSelection()
+    }
+
+    public func addItems(_ newItems: [PresenterShelfItem]) {
+        items.append(contentsOf: newItems)
+        ensureValidSelection()
+    }
+
+    public func clear() {
+        items.removeAll()
         ensureValidSelection()
     }
 

@@ -8,10 +8,9 @@ public enum OnboardingStep: String, CaseIterable, Equatable {
     case grabSuccess
     case zoomTutorial
     case zoomSuccess
-    case shrinkTutorial
-    case shrinkHold
+    case deleteTutorial
+    case deleteHold
     case vanishSuccess
-    case virtualCameraPrompt
     case completed
 }
 
@@ -78,7 +77,8 @@ public struct OnboardingStateMachine: Equatable {
                 currentStep = .grabTutorial
                 command = .spawnTutorialSceneItem
             case .skipTapped:
-                currentStep = .virtualCameraPrompt
+                currentStep = .completed
+                command = .persistCompleted
             default:
                 break
             }
@@ -90,8 +90,8 @@ public struct OnboardingStateMachine: Equatable {
                     currentStep = .grabSuccess
                 }
             case .skipTapped:
-                currentStep = .virtualCameraPrompt
-                command = .removeTutorialSceneItem
+                currentStep = .completed
+                command = .persistCompleted
             default:
                 break
             }
@@ -105,8 +105,8 @@ public struct OnboardingStateMachine: Equatable {
                 successFrameCount = 0
                 command = .replaceTutorialSceneItem
             case .skipTapped:
-                currentStep = .virtualCameraPrompt
-                command = .removeTutorialSceneItem
+                currentStep = .completed
+                command = .persistCompleted
             default:
                 break
             }
@@ -129,8 +129,8 @@ public struct OnboardingStateMachine: Equatable {
                     successFrameCount = 0
                 }
             case .skipTapped:
-                currentStep = .virtualCameraPrompt
-                command = .removeTutorialSceneItem
+                currentStep = .completed
+                command = .persistCompleted
             default:
                 break
             }
@@ -138,58 +138,37 @@ public struct OnboardingStateMachine: Equatable {
         case .zoomSuccess:
             switch event {
             case .continueTapped:
-                currentStep = .shrinkTutorial
+                currentStep = .deleteTutorial
                 shrinkBaselineScale = nil
                 successFrameCount = 0
                 command = .replaceTutorialSceneItem
             case .skipTapped:
-                currentStep = .virtualCameraPrompt
-                command = .removeTutorialSceneItem
+                currentStep = .completed
+                command = .persistCompleted
             default:
                 break
             }
 
-        case .shrinkTutorial:
+        case .deleteTutorial:
             switch event {
-            case .observe(_, let scale):
-                let baseline = shrinkBaselineScale ?? scale
-                shrinkBaselineScale = baseline
-                
-                let target = baseline * 0.85
-                if scale <= target {
-                    successFrameCount += 1
-                } else {
-                    successFrameCount = 0
-                }
-                
-                if successFrameCount >= 6 {
-                    currentStep = .shrinkHold
-                    successFrameCount = 0
-                }
             case .vanishHoldCompleted:
                 currentStep = .vanishSuccess
                 command = .removeTutorialSceneItem
             case .skipTapped:
-                currentStep = .virtualCameraPrompt
-                command = .removeTutorialSceneItem
+                currentStep = .completed
+                command = .persistCompleted
             default:
                 break
             }
 
-        case .shrinkHold:
+        case .deleteHold:
             switch event {
-            case .observe(_, let scale):
-                let baseline = shrinkBaselineScale ?? scale
-                let target = baseline * 0.85
-                if scale > target {
-                    currentStep = .shrinkTutorial
-                }
             case .vanishHoldCompleted:
                 currentStep = .vanishSuccess
                 command = .removeTutorialSceneItem
             case .skipTapped:
-                currentStep = .virtualCameraPrompt
-                command = .removeTutorialSceneItem
+                currentStep = .completed
+                command = .persistCompleted
             default:
                 break
             }
@@ -197,19 +176,9 @@ public struct OnboardingStateMachine: Equatable {
         case .vanishSuccess:
             switch event {
             case .completionDelayElapsed:
-                currentStep = .virtualCameraPrompt
-            case .skipTapped:
-                currentStep = .virtualCameraPrompt
-            default:
-                break
-            }
-
-        case .virtualCameraPrompt:
-            switch event {
-            case .virtualCameraTurnOnTapped:
                 currentStep = .completed
-                command = .requestVirtualCameraActivation
-            case .virtualCameraPromptDismissed:
+                command = .persistCompleted
+            case .skipTapped:
                 currentStep = .completed
                 command = .persistCompleted
             default:

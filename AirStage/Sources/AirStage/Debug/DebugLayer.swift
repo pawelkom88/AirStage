@@ -142,22 +142,24 @@ public struct DebugLayer: View {
 
     private var edgeDeleteDebugText: String {
         let state = viewModel.edgeDeleteState
-        let sideStr = state.side.map { $0 == .left ? "left" : "right" } ?? "none"
-        let layerStr = state.layerID.map { String($0.uuidString.prefix(8)) } ?? "none"
         let stateStr: String
         switch state {
         case .idle: stateStr = "idle"
-        case .hovering: stateStr = "hovering"
-        case .armed: stateStr = "armed"
+        case .arming: stateStr = "arming"
         case .disintegrating: stateStr = "disintegrating"
         }
+        
+        let now = Date()
+        let dwell = 0.0 // Removed
+        let commit = AirStage.commitProgress(for: state, now: now, deleteDelay: viewModel.edgeDeleteConfiguration.deleteDelay)
+        let dwellStr = state == .idle ? "—" : "\(Int(dwell * 100))%"
+        let commitStr = (state.isArmed || state.isDisintegrating) ? "\(Int(commit * 100))%" : "—"
+
         return """
         EDGE DELETE
         state: \(stateStr)
-        side: \(sideStr)
-        layer: \(layerStr)
-        zone: 96
-        scene: \(Int(viewModel.sceneBounds.width))×\(Int(viewModel.sceneBounds.height))
+        dwell: \(dwellStr)
+        commit: \(commitStr)
         """
     }
 }

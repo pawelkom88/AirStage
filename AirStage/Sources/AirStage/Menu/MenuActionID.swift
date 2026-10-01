@@ -8,5 +8,6 @@ public enum MenuActionID: String, Equatable, CaseIterable {
     case showPreview
     case camera
     case settings
+    case debugOverlay
     case quit
 }

@@ -9,5 +9,6 @@ public enum MenuIntent: Equatable {
     case shareImage
     case shareWindowOrScreen
     case removeLayer(id: UUID)
+    case toggleDebugOverlay
     case quit
 }

@@ -18,7 +18,6 @@ public final class MenuModel {
         }
 
         return [
-            MenuAction(id: .presenterShelf,     title: "Presenter Shelf"),
             MenuAction(id: .addNote,            title: "Add Note"),
             MenuAction(id: .shareImage,         title: "Share Image…"),
             MenuAction(id: .shareWindowOrScreen,
@@ -32,6 +31,7 @@ public final class MenuModel {
             MenuAction(id: .settings,           title: "Settings…",
                        isEnabled: false,
                        disabledReason: "Settings are available in a later release."),
+            MenuAction(id: .debugOverlay,       title: "Debug Overlay"),
             MenuAction(id: .quit,               title: "Quit AirStage"),
         ]
     }
@@ -66,15 +66,16 @@ public final class MenuModel {
 
         let intent: MenuIntent
         switch id {
-        case .presenterShelf:       intent = .presenterShelf
         case .showPreview:          intent = .showPreview
         case .settings:             intent = .settings
         case .addNote:              intent = .addNote
         case .shareImage:           intent = .shareImage
         case .shareWindowOrScreen:  intent = .shareWindowOrScreen
+        case .debugOverlay:         intent = .toggleDebugOverlay
         case .removeLayer:          return  // submenu; handled separately
         case .camera:               return  // submenu; handled separately
         case .quit:                 intent = .quit
+        case .presenterShelf:       return
         }
         AppLog.menu.info("Menu action selected action=\(id.rawValue, privacy: .public)")
         onIntent?(intent)

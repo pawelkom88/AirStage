@@ -1,6 +1,7 @@
 import Foundation
 import UniformTypeIdentifiers
 import OSLog
+import AppKit
 
 public enum ImageImportError: LocalizedError, Equatable {
     case unsupportedFormat
@@ -42,12 +43,26 @@ public final class ImageImporter {
         // Generate title from filename
         let filename = url.lastPathComponent
         
+        var initialSize = CGSize(width: 200, height: 150)
+        if let image = NSImage(contentsOf: url) {
+            let imageSize = image.size
+            if imageSize.width > 0 && imageSize.height > 0 {
+                let maxDim: CGFloat = 250
+                let ratio = imageSize.width / imageSize.height
+                if ratio > 1 {
+                    initialSize = CGSize(width: maxDim, height: maxDim / ratio)
+                } else {
+                    initialSize = CGSize(width: maxDim * ratio, height: maxDim)
+                }
+            }
+        }
+        
         // Spawn at a default position (e.g. center) and default size (e.g. 200x150)
         let result = store.addImage(
             title: filename,
             imageURL: url,
             position: CGPoint(x: 320, y: 240),
-            size: CGSize(width: 200, height: 150),
+            size: initialSize,
             replaceOldestIfFull: replaceOldestIfFull
         )
 

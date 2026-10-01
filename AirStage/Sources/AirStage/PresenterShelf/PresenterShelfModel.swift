@@ -68,6 +68,51 @@ public struct PresenterShelfItem: Identifiable, Equatable {
 }
 
 public extension PresenterShelfItem {
+    static func make(from url: URL) -> PresenterShelfItem {
+        let title = url.lastPathComponent
+        let ext = url.pathExtension.lowercased()
+        
+        var kind: Kind = .file
+        var category: PresenterShelfCategory = .files
+        var subtitle = "Document"
+        
+        if ["pdf", "txt", "md", "rtf", "doc", "docx"].contains(ext) {
+            kind = .notes
+            category = .notes
+            subtitle = "Document"
+        } else if ["png", "jpg", "jpeg", "gif", "heic"].contains(ext) {
+            kind = .screenshot
+            category = .screenshots
+            subtitle = "Image"
+        } else if ["key", "ppt", "pptx"].contains(ext) {
+            kind = .deck
+            category = .deck
+            subtitle = "Presentation"
+        } else if ["mp4", "mov", "m4v"].contains(ext) {
+            kind = .media
+            category = .media
+            subtitle = "Video"
+        }
+        
+        return PresenterShelfItem(
+            title: title,
+            subtitle: subtitle,
+            kind: kind,
+            category: category,
+            fileURL: url
+        )
+    }
+
+    static func makeFolder(from url: URL) -> PresenterShelfItem {
+        return PresenterShelfItem(
+            title: url.lastPathComponent,
+            subtitle: "Folder",
+            kind: .folder,
+            category: .files,
+            fileURL: url
+        )
+    }
+
     static let mockItems: [PresenterShelfItem] = [
         PresenterShelfItem(
             title: "Product Update — May 2025",

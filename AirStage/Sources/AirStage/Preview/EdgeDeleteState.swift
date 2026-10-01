@@ -7,8 +7,7 @@ public enum EdgeDeleteSide: Equatable {
 
 public enum EdgeDeleteState: Equatable {
     case idle
-    case hovering(side: EdgeDeleteSide, layerID: UUID, enteredAt: Date)
-    case armed(side: EdgeDeleteSide, layerID: UUID, armedAt: Date)
+    case arming(side: EdgeDeleteSide, layerID: UUID, startedAt: Date)
     case disintegrating(side: EdgeDeleteSide, layerID: UUID)
 }
 
@@ -17,8 +16,7 @@ public extension EdgeDeleteState {
         switch self {
         case .idle:
             return nil
-        case .hovering(let side, _, _),
-             .armed(let side, _, _),
+        case .arming(let side, _, _),
              .disintegrating(let side, _):
             return side
         }
@@ -28,25 +26,19 @@ public extension EdgeDeleteState {
         switch self {
         case .idle:
             return nil
-        case .hovering(_, let id, _),
-             .armed(_, let id, _),
+        case .arming(_, let id, _),
              .disintegrating(_, let id):
             return id
         }
     }
 
     var isArmed: Bool {
-        if case .armed = self { return true }
+        if case .arming = self { return true }
         return false
     }
 
     var isDisintegrating: Bool {
         if case .disintegrating = self { return true }
-        return false
-    }
-
-    var isHoveringOnly: Bool {
-        if case .hovering = self { return true }
         return false
     }
 
@@ -59,4 +51,11 @@ public extension EdgeDeleteState {
             return CGPoint(x: sceneBounds.maxX - 56, y: y)
         }
     }
+}
+
+public func commitProgress(for state: EdgeDeleteState, now: Date, deleteDelay: TimeInterval) -> Double {
+    guard case .arming(_, _, let startedAt) = state else { return 0 }
+    let duration = now.timeIntervalSince(startedAt)
+    if duration <= 0 || deleteDelay <= 0 { return 0 }
+    return min(duration / deleteDelay, 1.0)
 }

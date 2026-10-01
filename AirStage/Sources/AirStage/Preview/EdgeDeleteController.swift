@@ -5,8 +5,8 @@ public final class EdgeDeleteController: ObservableObject {
     public struct Configuration: Equatable {
         public var deleteZoneWidth: CGFloat = 96
         public var escapePadding: CGFloat = 32
-        public var revealDelay: TimeInterval = 2.0
-        public var deleteDelayAfterReveal: TimeInterval = 1.0
+        public var deleteDelay: TimeInterval = 1.5
+        public var jitterTolerance: TimeInterval = 0.3
         public var disintegrationDuration: TimeInterval = 0.65
 
         public init() {}
@@ -14,22 +14,20 @@ public final class EdgeDeleteController: ObservableObject {
 
     @Published public private(set) var state: EdgeDeleteState = .idle
 
-    private let configuration: Configuration
-    private var revealTask: Task<Void, Never>?
-    private var deleteTask: Task<Void, Never>?
+    public let configuration: Configuration
+    private var armingTask: Task<Void, Never>?
+    private var jitterTask: Task<Void, Never>?
 
     public init(configuration: Configuration = Configuration()) {
         self.configuration = configuration
     }
 
     deinit {
-        // Since deinit can be called on a background thread during teardown or cleanup,
-        // cancel the tasks from Task or manually. Note: tasks can be cancelled without @MainActor.
-        let rTask = revealTask
-        let dTask = deleteTask
+        let aTask = armingTask
+        let jTask = jitterTask
         Task {
-            rTask?.cancel()
-            dTask?.cancel()
+            aTask?.cancel()
+            jTask?.cancel()
         }
     }
 
@@ -38,11 +36,10 @@ public final class EdgeDeleteController: ObservableObject {
         id: UUID,
         frame: CGRect,
         sceneBounds: CGRect,
-        isOnboardingCompleted: Bool,
-        isTutorialLayer: Bool,
+        isAllowed: Bool,
         onDeleteReady: @escaping @MainActor (UUID, EdgeDeleteSide) -> Void
     ) {
-        guard isOnboardingCompleted, !isTutorialLayer else {
+        guard isAllowed else {
             cancel()
             return
         }
@@ -54,24 +51,34 @@ public final class EdgeDeleteController: ObservableObject {
         )
 
         guard let side else {
-            cancelIfTracking(id)
+            if state.layerID == id && state.isArmed {
+                if jitterTask == nil {
+                    jitterTask = Task { [weak self] in
+                        guard let self else { return }
+                        try? await Task.sleep(nanoseconds: UInt64(self.configuration.jitterTolerance * 1_000_000_000))
+                        guard !Task.isCancelled else { return }
+                        await MainActor.run {
+                            self.cancel()
+                        }
+                    }
+                }
+            } else {
+                cancelIfTracking(id)
+            }
             return
         }
 
+        jitterTask?.cancel()
+        jitterTask = nil
+
         switch state {
         case .idle:
-            beginHovering(side: side, layerID: id, onDeleteReady: onDeleteReady)
+            beginArming(side: side, layerID: id, onDeleteReady: onDeleteReady)
 
-        case .hovering(let currentSide, let currentID, _):
+        case .arming(let currentSide, let currentID, _):
             if currentID != id || currentSide != side {
                 cancel()
-                beginHovering(side: side, layerID: id, onDeleteReady: onDeleteReady)
-            }
-
-        case .armed(let currentSide, let currentID, _):
-            if currentID != id || currentSide != side {
-                cancel()
-                beginHovering(side: side, layerID: id, onDeleteReady: onDeleteReady)
+                beginArming(side: side, layerID: id, onDeleteReady: onDeleteReady)
             }
 
         case .disintegrating:
@@ -81,68 +88,55 @@ public final class EdgeDeleteController: ObservableObject {
 
     @MainActor
     public func cancel() {
-        revealTask?.cancel()
-        deleteTask?.cancel()
-        revealTask = nil
-        deleteTask = nil
+        armingTask?.cancel()
+        jitterTask?.cancel()
+        armingTask = nil
+        jitterTask = nil
         state = .idle
     }
 
     @MainActor
     public func markDisintegrating(layerID: UUID, side: EdgeDeleteSide) {
-        revealTask?.cancel()
-        deleteTask?.cancel()
+        armingTask?.cancel()
+        jitterTask?.cancel()
         state = .disintegrating(side: side, layerID: layerID)
     }
 
-    // Test helpers to bypass asynchronous Task delays
     @MainActor
     public func forceArmForTesting(id: UUID, side: EdgeDeleteSide) {
-        revealTask?.cancel()
-        deleteTask?.cancel()
-        state = .armed(side: side, layerID: id, armedAt: Date())
+        armingTask?.cancel()
+        jitterTask?.cancel()
+        state = .arming(side: side, layerID: id, startedAt: Date())
     }
 
     @MainActor
     public func forceDeleteReadyForTesting(id: UUID, side: EdgeDeleteSide, onDeleteReady: @escaping @MainActor (UUID, EdgeDeleteSide) -> Void) {
-        revealTask?.cancel()
-        deleteTask?.cancel()
-        state = .armed(side: side, layerID: id, armedAt: Date())
+        armingTask?.cancel()
+        jitterTask?.cancel()
+        state = .arming(side: side, layerID: id, startedAt: Date())
         onDeleteReady(id, side)
     }
 
     @MainActor
-    private func beginHovering(
+    private func beginArming(
         side: EdgeDeleteSide,
         layerID: UUID,
         onDeleteReady: @escaping @MainActor (UUID, EdgeDeleteSide) -> Void
     ) {
-        revealTask?.cancel()
-        deleteTask?.cancel()
+        armingTask?.cancel()
+        jitterTask?.cancel()
 
-        state = .hovering(side: side, layerID: layerID, enteredAt: Date())
+        state = .arming(side: side, layerID: layerID, startedAt: Date())
 
-        revealTask = Task { [weak self] in
+        armingTask = Task { [weak self] in
             guard let self else { return }
 
-            try? await Task.sleep(nanoseconds: UInt64(configuration.revealDelay * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: UInt64(configuration.deleteDelay * 1_000_000_000))
             guard !Task.isCancelled else { return }
 
             await MainActor.run {
-                guard case .hovering(side, layerID, _) = self.state else { return }
-                self.state = .armed(side: side, layerID: layerID, armedAt: Date())
-            }
-
-            self.deleteTask = Task { [weak self] in
-                guard let self else { return }
-
-                try? await Task.sleep(nanoseconds: UInt64(configuration.deleteDelayAfterReveal * 1_000_000_000))
-                guard !Task.isCancelled else { return }
-
-                await MainActor.run {
-                    guard case .armed(side, layerID, _) = self.state else { return }
-                    onDeleteReady(layerID, side)
-                }
+                guard case .arming(let side, let layerID, _) = self.state else { return }
+                onDeleteReady(layerID, side)
             }
         }
     }
@@ -166,8 +160,6 @@ public final class EdgeDeleteController: ObservableObject {
         let leftThreshold: CGFloat
         let rightThreshold: CGFloat
 
-        // Hysteresis:
-        // when already tracking, allow a little escape padding before canceling.
         if currentState.side != nil {
             leftThreshold = zone + escape
             rightThreshold = sceneBounds.maxX - zone - escape

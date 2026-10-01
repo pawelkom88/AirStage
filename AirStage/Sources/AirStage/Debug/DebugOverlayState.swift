@@ -4,23 +4,17 @@ import Foundation
 /// Kept in the library target so unit tests can verify it without importing SwiftUI.
 public struct EdgeDeleteDebugInfo: Equatable {
     public let stateDescription: String
-    public let side: String?
-    public let layerID: UUID?
-    public let deleteZoneWidth: CGFloat
-    public let sceneBounds: CGRect
+    public let dwellProgress: Double
+    public let commitProgress: Double
 
     public init(
         stateDescription: String,
-        side: String?,
-        layerID: UUID?,
-        deleteZoneWidth: CGFloat,
-        sceneBounds: CGRect
+        dwellProgress: Double,
+        commitProgress: Double
     ) {
         self.stateDescription = stateDescription
-        self.side = side
-        self.layerID = layerID
-        self.deleteZoneWidth = deleteZoneWidth
-        self.sceneBounds = sceneBounds
+        self.dwellProgress = dwellProgress
+        self.commitProgress = commitProgress
     }
 }
 

@@ -27,6 +27,7 @@ final class PreviewWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
+        window.minSize = NSSize(width: 600, height: 420)
         window.title = "AirStage Preview"
         window.center()
         window.isOpaque = false
@@ -60,6 +61,17 @@ final class PreviewWindowController: NSWindowController {
         window.onDelete = { [weak self] in
             self?.sceneStore.deleteSelectedLayer()
         }
+
+        window.onEscape = { [weak self] in
+            guard let self = self else { return }
+            if self.viewModel.presenterShelfStore.isVisible {
+                self.viewModel.hidePresenterShelf()
+            } else if self.viewModel.previewFullscreenController.isFullscreen {
+                self.viewModel.togglePreviewFullscreen()
+            }
+        }
+        
+        self.viewModel.attachPreviewWindow(window)
 
         let container = NSView()
         container.wantsLayer = true
@@ -195,6 +207,11 @@ final class PreviewWindowController: NSWindowController {
 final class PreviewWindow: NSWindow {
     var onPaste: (() -> Void)?
     var onDelete: (() -> Void)?
+    var onEscape: (() -> Void)?
+
+    override var canBecomeKey: Bool {
+        return true
+    }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "v" {
@@ -207,6 +224,10 @@ final class PreviewWindow: NSWindow {
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 51 || event.keyCode == 117 {
             onDelete?()
+            return
+        }
+        if event.keyCode == 53 {
+            onEscape?()
             return
         }
         super.keyDown(with: event)

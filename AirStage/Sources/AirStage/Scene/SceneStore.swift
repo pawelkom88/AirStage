@@ -72,9 +72,21 @@ public final class SceneStore: ObservableObject {
         return addLayer(kind: .tutorial, title: title, position: position, size: size, replaceOldestIfFull: replaceOldestIfFull)
     }
 
+    public func addShelfItem(
+        title: String,
+        subtitle: String,
+        kind: PresenterShelfItem.Kind,
+        position: CGPoint = .zero,
+        size: CGSize = .zero,
+        replaceOldestIfFull: Bool = false
+    ) -> AddResult {
+        return addLayer(kind: .shelfItem, title: title, subtitle: subtitle, position: position, size: size, replaceOldestIfFull: replaceOldestIfFull)
+    }
+
     public func addLayer(
         kind: SceneLayer.Kind,
         title: String,
+        subtitle: String = "",
         imageURL: URL? = nil,
         position: CGPoint = .zero,
         size: CGSize = .zero,
@@ -93,6 +105,8 @@ public final class SceneStore: ObservableObject {
             maxKindCount = SceneLimits.maxWindowLayers
         case .tutorial:
             // Tutorial cards are subject to total limits, but let's give them a high limit or just use total limit
+            maxKindCount = SceneLimits.maxTotalLayers
+        case .shelfItem:
             maxKindCount = SceneLimits.maxTotalLayers
         }
 
@@ -119,6 +133,7 @@ public final class SceneStore: ObservableObject {
         let newLayer = SceneLayer(
             kind: kind,
             title: title,
+            subtitle: subtitle,
             position: position,
             size: size,
             zIndex: nextZIndex,
@@ -218,6 +233,8 @@ public final class SceneStore: ObservableObject {
                 minSize = SceneLimits.minWindowSize
             case .tutorial:
                 minSize = SceneLimits.minTutorialSize
+            case .shelfItem:
+                minSize = SceneLimits.minNoteSize
             }
             let clampedW = max(minSize.width, layers[index].size.width)
             let clampedH = max(minSize.height, layers[index].size.height)
@@ -240,6 +257,8 @@ public final class SceneStore: ObservableObject {
                 minSize = SceneLimits.minWindowSize
             case .tutorial:
                 minSize = SceneLimits.minTutorialSize
+            case .shelfItem:
+                minSize = SceneLimits.minNoteSize
             }
 
             if resizingLayerID == id {

@@ -172,11 +172,7 @@ final class PreviewViewModelTests: XCTestCase {
         XCTAssertEqual(vm.onboardingStep, .zoomSuccess)
 
         vm.handleOnboardingEvent(.continueTapped)
-        XCTAssertEqual(vm.onboardingStep, .shrinkTutorial)
-
-        vm.handleOnboardingEvent(.observe(grabbing: false, scale: 1.2))
-        for _ in 1...6 { vm.handleOnboardingEvent(.observe(grabbing: false, scale: 1.0)) }
-        XCTAssertEqual(vm.onboardingStep, .shrinkHold)
+        XCTAssertEqual(vm.onboardingStep, .deleteTutorial)
 
         vm.handleOnboardingEvent(.vanishHoldCompleted)
         XCTAssertEqual(vm.onboardingStep, .vanishSuccess)
@@ -186,7 +182,7 @@ final class PreviewViewModelTests: XCTestCase {
             XCTAssertEqual(store.layers.count, 0)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) {
-            XCTAssertEqual(vm.onboardingStep, .virtualCameraPrompt)
+            XCTAssertEqual(vm.onboardingStep, .completed)
             exp.fulfill()
         }
         wait(for: [exp], timeout: 4.5)
@@ -211,12 +207,12 @@ final class PreviewViewModelTests: XCTestCase {
         XCTAssertEqual(store.layers.first?.title, "Zoom me")
 
         vm.handleOnboardingEvent(.continueTapped)
-        XCTAssertEqual(store.layers.first?.title, "Shrink me")
+        XCTAssertEqual(store.layers.first?.title, "Delete me")
     }
 
     func testViewModelOnboardingReset() {
         let store = SceneStore()
-        let vm = PreviewViewModel(permissionService: FakeCameraPermissionService(status: .authorized), sceneStore: store)
+        _ = PreviewViewModel(permissionService: FakeCameraPermissionService(status: .authorized), sceneStore: store)
 
         // Completed starts as completed
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
@@ -228,34 +224,7 @@ final class PreviewViewModelTests: XCTestCase {
         XCTAssertFalse(UserDefaults.standard.bool(forKey: "hasCompletedOnboarding"))
     }
 
-    func testViewModelOnboardingAutoVanishAfterHold() {
-        let store = SceneStore()
-        let vm = PreviewViewModel(permissionService: FakeCameraPermissionService(status: .authorized), sceneStore: store)
-        UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
 
-        vm.handleOnboardingEvent(.showMeTapped)
-        vm.handleOnboardingEvent(.observe(grabbing: true, scale: 1.0))
-        vm.handleOnboardingEvent(.continueTapped)
-        vm.handleOnboardingEvent(.observe(grabbing: false, scale: 1.0))
-        for _ in 1...6 { vm.handleOnboardingEvent(.observe(grabbing: false, scale: 1.2)) }
-        vm.handleOnboardingEvent(.continueTapped)
-
-        let exp = expectation(description: "vanish hold completes")
-        vm.handleOnboardingEvent(.observe(grabbing: false, scale: 1.2))
-        for _ in 1...6 { vm.handleOnboardingEvent(.observe(grabbing: false, scale: 1.0)) }
-        XCTAssertEqual(vm.onboardingStep, .shrinkHold)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) {
-            XCTAssertEqual(vm.onboardingStep, .vanishSuccess)
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 6.3) {
-            XCTAssertEqual(vm.onboardingStep, .virtualCameraPrompt)
-            exp.fulfill()
-        }
-
-        wait(for: [exp], timeout: 8.0)
-    }
 
     func testViewModelOnboardingVanishViaDeleteKeyOrOutsideDrag() {
         let store = SceneStore()
@@ -269,7 +238,7 @@ final class PreviewViewModelTests: XCTestCase {
         for _ in 1...6 { vm.handleOnboardingEvent(.observe(grabbing: false, scale: 1.2)) }
         vm.handleOnboardingEvent(.continueTapped)
 
-        XCTAssertEqual(vm.onboardingStep, .shrinkTutorial)
+        XCTAssertEqual(vm.onboardingStep, .deleteTutorial)
         XCTAssertEqual(store.layers.count, 1)
 
         // Remove tutorial card directly from store (simulates drag-outside or delete)
@@ -281,7 +250,7 @@ final class PreviewViewModelTests: XCTestCase {
 
         let exp = expectation(description: "vanish transition completes")
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) {
-            XCTAssertEqual(vm.onboardingStep, .virtualCameraPrompt)
+            XCTAssertEqual(vm.onboardingStep, .completed)
             exp.fulfill()
         }
         wait(for: [exp], timeout: 5.0)
@@ -356,80 +325,5 @@ final class PreviewViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
-    func testVanishHoldIsTriggeredForNormalLayerBelowThreshold() {
-        let store = SceneStore()
-        let vm = PreviewViewModel(
-            permissionService: FakeCameraPermissionService(status: .authorized),
-            sceneStore: store
-        )
-        
-        guard let id = store.addNote(title: "Note", position: CGPoint(x: 100, y: 100), size: CGSize(width: 150, height: 150)).layerID else {
-            XCTFail("Failed to add note")
-            return
-        }
-        
-        let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
-        store.beginResize(withID: id)
-        store.resizeLayer(withID: id, size: CGSize(width: 50, height: 50), position: CGPoint(x: 50, y: 50), sceneBounds: bounds)
-        
-        XCTAssertTrue(vm.vanishHoldingLayerIDs.contains(id))
-    }
 
-    func testVanishHoldCancelsWhenScaledBackUp() {
-        let store = SceneStore()
-        let vm = PreviewViewModel(
-            permissionService: FakeCameraPermissionService(status: .authorized),
-            sceneStore: store
-        )
-        
-        guard let id = store.addNote(title: "Note", position: CGPoint(x: 100, y: 100), size: CGSize(width: 150, height: 150)).layerID else {
-            XCTFail("Failed to add note")
-            return
-        }
-        
-        let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
-        store.beginResize(withID: id)
-        store.resizeLayer(withID: id, size: CGSize(width: 50, height: 50), position: CGPoint(x: 50, y: 50), sceneBounds: bounds)
-        
-        XCTAssertTrue(vm.vanishHoldingLayerIDs.contains(id))
-        
-        // Scale it back up above 0.4
-        store.resizeLayer(withID: id, size: CGSize(width: 100, height: 100), position: CGPoint(x: 50, y: 50), sceneBounds: bounds)
-        XCTAssertFalse(vm.vanishHoldingLayerIDs.contains(id))
-    }
-
-    func testVanishHoldCompletesAndRemovesNormalLayer() {
-        let store = SceneStore()
-        let vm = PreviewViewModel(
-            permissionService: FakeCameraPermissionService(status: .authorized),
-            sceneStore: store
-        )
-        
-        guard let id = store.addNote(title: "Note", position: CGPoint(x: 100, y: 100), size: CGSize(width: 150, height: 150)).layerID else {
-            XCTFail("Failed to add note")
-            return
-        }
-        
-        let bounds = CGRect(x: 0, y: 0, width: 640, height: 480)
-        store.beginResize(withID: id)
-        store.resizeLayer(withID: id, size: CGSize(width: 50, height: 50), position: CGPoint(x: 50, y: 50), sceneBounds: bounds)
-        
-        XCTAssertTrue(vm.vanishHoldingLayerIDs.contains(id))
-        
-        // Directly complete vanish hold to avoid 3s timer delay
-        vm.completeVanishHold(for: id)
-        
-        XCTAssertFalse(vm.vanishHoldingLayerIDs.contains(id))
-        XCTAssertTrue(vm.disintegratedLayerIDs.contains(id))
-        
-        // Expect layer to be removed after 1.5 seconds
-        let expectation = self.expectation(description: "Wait for disintegration animation")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            XCTAssertNil(store.layer(withID: id))
-            XCTAssertFalse(vm.disintegratedLayerIDs.contains(id))
-            expectation.fulfill()
-        }
-        
-        wait(for: [expectation], timeout: 2.0)
-    }
 }

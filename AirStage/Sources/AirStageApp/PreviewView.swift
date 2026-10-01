@@ -8,6 +8,7 @@ struct StickyNoteView: View {
     let viewModel: PreviewViewModel
 
     @State private var startPosition: CGPoint = .zero
+    @FocusState private var isFocused: Bool
 
     private var dragGesture: some Gesture {
         DragGesture()
@@ -45,12 +46,23 @@ struct StickyNoteView: View {
                     get: { layer.title },
                     set: { sceneStore.updateNoteText(layerID: layer.id, text: $0) }
                 ), axis: .vertical)
+                .focused($isFocused)
                 .font(.system(.body, design: .rounded))
                 .fontWeight(.medium)
                 .foregroundColor(.black.opacity(0.85))
                 .multilineTextAlignment(.center)
                 .textFieldStyle(.plain)
                 .padding(12)
+                .onChange(of: layer.isSelected) { _, selected in
+                    if selected {
+                        isFocused = true
+                    }
+                }
+                .onAppear {
+                    if layer.isSelected {
+                        isFocused = true
+                    }
+                }
             } else {
                 Text(layer.title.isEmpty ? "Write something..." : layer.title)
                     .font(.system(.body, design: .rounded))
@@ -71,6 +83,7 @@ struct StickyNoteView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(layer.isSelected ? Color.blue.opacity(0.6) : Color.black.opacity(0.1), lineWidth: layer.isSelected ? 2 : 1)
         )
+        .glowOverlay(isActive: startPosition != .zero, cornerRadius: 16)
         .overlay(
             SelectedLayerOverlay(layer: layer, sceneStore: sceneStore, viewModel: viewModel)
         )
@@ -173,6 +186,7 @@ struct ImageCardView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(layer.isSelected ? Color.blue.opacity(0.6) : (layer.imageURL != nil ? Color.clear : Color.black.opacity(0.1)), lineWidth: layer.isSelected ? 2 : 1)
         )
+        .glowOverlay(isActive: startPosition != .zero, cornerRadius: 16)
         .overlay(
             SelectedLayerOverlay(layer: layer, sceneStore: sceneStore, viewModel: viewModel)
         )
@@ -260,6 +274,7 @@ struct DefaultCardView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(layer.isSelected ? Color.blue.opacity(0.6) : Color.black.opacity(0.1), lineWidth: layer.isSelected ? 2 : 1)
         )
+        .glowOverlay(isActive: startPosition != .zero, cornerRadius: 16)
         .overlay(
             SelectedLayerOverlay(layer: layer, sceneStore: sceneStore, viewModel: viewModel)
         )
@@ -359,43 +374,53 @@ struct SelectedLayerOverlay: View {
                             .padding(-33) // position it exactly on the corner
                             .gesture(
                                     DragGesture(minimumDistance: 1)
-                                        .onChanged { value in
-                                            if startSize == .zero {
-                                                startSize = layer.size
-                                                startPosition = layer.position
-                                                sceneStore.beginResize(withID: layer.id)
-                                            }
-
-                                            if layer.kind == .tutorial {
-                                                resizeTutorialSquare(
-                                                    handle: .topLeft,
-                                                    translation: value.translation
-                                                )
-                                            } else {
-                                                let deltaW = -value.translation.width
-                                                let deltaH = -value.translation.height
-                                                let newW = startSize.width + deltaW
-                                                let newH = startSize.height + deltaH
-
-                                                let newPos = CGPoint(
-                                                    x: startPosition.x - deltaW / 2,
-                                                    y: startPosition.y - deltaH / 2
-                                                )
-                                                sceneStore.resizeLayer(withID: layer.id, size: CGSize(width: newW, height: newH), position: newPos, sceneBounds: sceneBounds)
-                                            }
+                                    .onChanged { value in
+                                        if startSize == .zero {
+                                            startSize = layer.size
+                                            startPosition = layer.position
+                                            sceneStore.beginResize(withID: layer.id)
                                         }
-                                        .onEnded { value in
-                                            let finalSize = sceneStore.layer(withID: layer.id)?.size ?? layer.size
-                                            sceneStore.endResize(withID: layer.id, finalSize: finalSize)
-                                            startSize = .zero
-                                            startPosition = .zero
 
-                                            if layer.kind == .tutorial {
-                                                let scale = finalSize.width / 150.0
-                                                viewModel.handleOnboardingEvent(.observe(grabbing: false, scale: scale))
+                                        if layer.kind == .tutorial {
+                                            resizeTutorialSquare(
+                                                handle: .topLeft,
+                                                translation: value.translation
+                                            )
+                                        } else {
+                                            var deltaW = -value.translation.width
+                                            var deltaH = -value.translation.height
+
+                                            if layer.kind == .image {
+                                                let aspectRatio = startSize.width / startSize.height
+                                                if abs(deltaW) > abs(deltaH) {
+                                                    deltaH = deltaW / aspectRatio
+                                                } else {
+                                                    deltaW = deltaH * aspectRatio
+                                                }
                                             }
+
+                                            let newW = startSize.width + deltaW
+                                            let newH = startSize.height + deltaH
+
+                                            let newPos = CGPoint(
+                                                x: startPosition.x - deltaW / 2,
+                                                y: startPosition.y - deltaH / 2
+                                            )
+                                            sceneStore.resizeLayer(withID: layer.id, size: CGSize(width: newW, height: newH), position: newPos, sceneBounds: sceneBounds)
                                         }
-                                )
+                                    }
+                                    .onEnded { value in
+                                        let finalSize = sceneStore.layer(withID: layer.id)?.size ?? layer.size
+                                        sceneStore.endResize(withID: layer.id, finalSize: finalSize)
+                                        startSize = .zero
+                                        startPosition = .zero
+
+                                        if layer.kind == .tutorial {
+                                            let scale = finalSize.width / 150.0
+                                            viewModel.handleOnboardingEvent(.observe(grabbing: false, scale: scale))
+                                        }
+                                    }
+                            )
                             Spacer()
                         }
                         Spacer()
@@ -433,8 +458,18 @@ struct SelectedLayerOverlay: View {
                                                 translation: value.translation
                                             )
                                         } else {
-                                            let deltaW = value.translation.width
-                                            let deltaH = value.translation.height
+                                            var deltaW = value.translation.width
+                                            var deltaH = value.translation.height
+
+                                            if layer.kind == .image {
+                                                let aspectRatio = startSize.width / startSize.height
+                                                if abs(deltaW) > abs(deltaH) {
+                                                    deltaH = deltaW / aspectRatio
+                                                } else {
+                                                    deltaW = deltaH * aspectRatio
+                                                }
+                                            }
+
                                             let newW = startSize.width + deltaW
                                             let newH = startSize.height + deltaH
 
@@ -471,7 +506,6 @@ struct TutorialSceneCardView: View {
     let viewModel: PreviewViewModel
 
     @State private var startPosition: CGPoint = .zero
-    @State private var snapEffect: Bool = false
 
     private var dragGesture: some Gesture {
         DragGesture()
@@ -513,7 +547,7 @@ struct TutorialSceneCardView: View {
         switch viewModel.onboardingStep {
         case .grabTutorial, .grabSuccess: return "hand.draw.fill"
         case .zoomTutorial, .zoomSuccess: return "arrow.up.backward.and.arrow.down.forward"
-        case .shrinkTutorial, .shrinkHold: return "arrow.down.right.and.arrow.up.left"
+        case .deleteTutorial, .deleteHold: return "arrow.down.right.and.arrow.up.left"
         default: return "hand.draw.fill"
         }
     }
@@ -538,9 +572,11 @@ struct TutorialSceneCardView: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(layer.isSelected ? Color.blue.opacity(0.8) : Color.white.opacity(0.4), lineWidth: 2)
         )
+        .glowOverlay(isActive: startPosition != .zero, cornerRadius: 18)
+        .glowOverlay(isActive: viewModel.onboardingStep == .zoomTutorial && startPosition == .zero, cornerRadius: 18, colors: [.orange, .pink, .yellow])
         .overlay(
             Group {
-                if viewModel.onboardingStep == .shrinkHold {
+                if viewModel.onboardingStep == .deleteHold {
                     ProgressCircleOverlay(duration: OnboardingThresholds.vanishHoldDuration)
                 }
             }
@@ -554,11 +590,9 @@ struct TutorialSceneCardView: View {
         .onTapGesture {
             sceneStore.selectLayer(layer.id)
         }
-        .disintegrationEffect(isDeleted: snapEffect, targetOffset: viewModel.disintegrationTargetOffset(for: layer))
+        .disintegrationEffect(isDeleted: viewModel.disintegratedLayerIDs.contains(layer.id), targetOffset: viewModel.disintegrationTargetOffset(for: layer))
         .onChange(of: viewModel.onboardingStep) { _, newStep in
-            if newStep == .virtualCameraPrompt {
-                snapEffect = true
-            }
+            // No virtual camera prompt snap anymore
         }
     }
 }
@@ -600,55 +634,7 @@ struct OnboardingWelcomeCard: View {
     }
 }
 
-struct VirtualCameraPromptCard: View {
-    let viewModel: PreviewViewModel
 
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "video.badge.checkmark")
-                .font(.system(size: 42, weight: .semibold))
-                .foregroundStyle(.green)
-
-            Text("You’re ready")
-                .font(.system(.title2, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-
-            Text("AirStage can now appear as a camera source in calls, recordings, and live streams. Turn it on when you’re ready.")
-                .font(.system(.body, design: .rounded))
-                .foregroundStyle(.white.opacity(0.78))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 10) {
-                Button("Not now") {
-                    viewModel.handleOnboardingEvent(.virtualCameraPromptDismissed)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Color.white.opacity(0.14))
-                .foregroundStyle(.white)
-                .clipShape(Capsule())
-
-                Button("Turn on AirStage") {
-                    viewModel.handleOnboardingEvent(.virtualCameraTurnOnTapped)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Color.white)
-                .foregroundStyle(.black)
-                .clipShape(Capsule())
-            }
-        }
-        .padding(24)
-        .frame(width: 360)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .shadow(radius: 18)
-    }
-}
-
-// Onboarding Instruction Pill
 struct OnboardingInstructionPill: View {
     let step: OnboardingStep
     let viewModel: PreviewViewModel
@@ -693,7 +679,7 @@ struct OnboardingInstructionPill: View {
         switch step {
         case .grabTutorial: return "Grab it"
         case .zoomTutorial: return "Zoom it"
-        case .shrinkTutorial, .shrinkHold: return "Make it vanish"
+        case .deleteTutorial, .deleteHold: return "Make it vanish"
         default: return ""
         }
     }
@@ -702,7 +688,7 @@ struct OnboardingInstructionPill: View {
         switch step {
         case .grabTutorial: return "Drag the card and move it around."
         case .zoomTutorial: return "Drag a corner handle to make it bigger."
-        case .shrinkTutorial, .shrinkHold: return "Shrink it very small and hold, or drag it outside."
+        case .deleteTutorial, .deleteHold: return "Drag it to the edge of the screen to delete it."
         default: return ""
         }
     }
@@ -797,28 +783,20 @@ struct PreviewView: View {
             // Onboarding Overlay Cards
             if viewModel.onboardingStep == .welcome {
                 OnboardingWelcomeCard(viewModel: viewModel)
-            } else if viewModel.onboardingStep == .virtualCameraPrompt {
-                VirtualCameraPromptCard(viewModel: viewModel)
-            } else if viewModel.onboardingStep == .grabTutorial || viewModel.onboardingStep == .zoomTutorial || viewModel.onboardingStep == .shrinkTutorial || viewModel.onboardingStep == .shrinkHold {
+            } else if viewModel.onboardingStep == .grabTutorial || viewModel.onboardingStep == .zoomTutorial || viewModel.onboardingStep == .deleteTutorial || viewModel.onboardingStep == .deleteHold {
                 OnboardingInstructionPill(step: viewModel.onboardingStep, viewModel: viewModel)
             } else if viewModel.onboardingStep == .grabSuccess || viewModel.onboardingStep == .zoomSuccess || viewModel.onboardingStep == .vanishSuccess {
                 OnboardingSuccessToast(step: viewModel.onboardingStep, viewModel: viewModel)
             }
 
             if let side = viewModel.edgeDeleteState.side, let frame = viewModel.draggedCardFrame {
-                if #available(macOS 26, iOS 26, *) {
-                    EdgeDeleteBadge(side: side, state: viewModel.edgeDeleteState)
-                        .position(EdgeDeleteState.badgePosition(side: side, cardFrame: frame, sceneBounds: viewModel.sceneBounds))
-                        .zIndex(850)
-                } else {
-                    EdgeDeleteZoneView(
-                        side: side,
-                        state: viewModel.edgeDeleteState
-                    )
-                    .position(edgeDeleteZonePosition(side: side, sceneBounds: viewModel.sceneBounds))
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                    .zIndex(850)
-                }
+                EdgeDeleteBadge(
+                    side: side,
+                    state: viewModel.edgeDeleteState,
+                    configuration: viewModel.edgeDeleteConfiguration
+                )
+                .position(EdgeDeleteState.badgePosition(side: side, cardFrame: frame, sceneBounds: viewModel.sceneBounds))
+                .zIndex(850)
             }
 
             if viewModel.isDebugOverlayVisible {
@@ -836,27 +814,7 @@ struct PreviewView: View {
             .allowsHitTesting(false)
             .accessibilityHidden(true)
 
-            // Visible debug toggle in dev/debug mode
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        viewModel.toggleDebugOverlay()
-                    }) {
-                        Image(systemName: viewModel.isDebugOverlayVisible ? "ladybug.fill" : "ladybug")
-                            .foregroundColor(viewModel.isDebugOverlayVisible ? .green : .white.opacity(0.7))
-                            .padding(8)
-                            .background(Color.black.opacity(0.5))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(viewModel.isDebugOverlayVisible ? "Hide debug coordinates" : "Show debug coordinates")
-                    .help(viewModel.isDebugOverlayVisible ? "Hide debug coordinates" : "Show debug coordinates")
-                    .padding()
-                }
-                Spacer()
-            }
-            .zIndex(1000)
+
 
             // Presenter Shelf Overlay
             if viewModel.presenterShelfStore.isVisible {
@@ -876,6 +834,30 @@ struct PreviewView: View {
             .opacity(0)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+            
+            // Top-right Window Controls
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        viewModel.togglePreviewFullscreen()
+                    }) {
+                        Image(systemName: viewModel.previewFullscreenController.isFullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                            .shadow(radius: 4)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(16)
+                    .opacity(viewModel.isHovered || !viewModel.previewFullscreenController.isFullscreen ? 1.0 : 0.0)
+                    .animation(.easeInOut(duration: 0.2), value: viewModel.isHovered)
+                    .animation(.easeInOut(duration: 0.2), value: viewModel.previewFullscreenController.isFullscreen)
+                }
+                Spacer()
+            }
 
             // Quick-Add Toolbar Overlay (only when onboarding is completed or welcome card is not blocking)
             if viewModel.shouldShowQuickAddToolbar {
@@ -1026,6 +1008,11 @@ struct PreviewView: View {
         .onChange(of: proxy.size) { _, newSize in
             viewModel.updateCanvasSize(newSize)
         }
+        .onChange(of: viewModel.edgeDeleteState) { oldValue, newValue in
+            if newValue.isArmed && !oldValue.isArmed {
+                NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+            }
+        }
         }
     }
 
@@ -1040,14 +1027,20 @@ struct PreviewView: View {
     }
 }
 
-@available(macOS 26, iOS 26, *)
 struct EdgeDeleteBadge: View {
     let side: EdgeDeleteSide
     let state: EdgeDeleteState
-    @Namespace private var glassNamespace
+    let configuration: EdgeDeleteController.Configuration
+
+    @State private var now = Date()
+    private let clock = Timer.publish(every: 1.0 / 30.0, on: .main, in: .common).autoconnect()
 
     private var isArmed: Bool {
-        if case .armed = state { return true }
+        if case .arming = state { return true }
+        return false
+    }
+
+    private var isDisintegrating: Bool {
         if case .disintegrating = state { return true }
         return false
     }
@@ -1056,40 +1049,67 @@ struct EdgeDeleteBadge: View {
         state != .idle
     }
 
-    @State private var pulse = false
+    private var commitProgress: Double {
+        AirStage.commitProgress(for: state, now: now, deleteDelay: configuration.deleteDelay)
+    }
 
     var body: some View {
-        GlassEffectContainer(spacing: 16) {
-            Image(systemName: isArmed ? "trash.fill" : "trash")
-                .font(.system(size: isArmed ? 26 : 22, weight: .semibold))
-                .foregroundStyle(.white)
-                .contentTransition(.symbolEffect(.replace))
-                .symbolEffect(.bounce, value: isArmed)
-                .frame(width: isArmed ? 104 : 88, height: isArmed ? 104 : 88)
-                .glassEffect(
-                    isArmed
-                        ? .regular.tint(.red.opacity(0.32)).interactive()
-                        : .regular.interactive(),
-                    in: Circle()
-                )
-                .glassEffectID("edgeDeleteBadge", in: glassNamespace)
+        ZStack {
+            Circle()
+                .stroke(Color.white.opacity(0.15), lineWidth: 3)
+
+            Circle()
+                .trim(from: 0, to: isArmed ? commitProgress : (isDisintegrating ? 1 : 0))
+                .stroke(Color.red, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .opacity(isArmed || isDisintegrating ? 1 : 0)
+
+            badgeCore
         }
+        .frame(width: isArmed ? 108 : 92, height: isArmed ? 108 : 92)
         .scaleEffect(isVisible ? 1.0 : 0.6)
         .opacity(isVisible ? 1.0 : 0.0)
-        .animation(.spring(response: 0.42, dampingFraction: 0.74), value: isArmed)
-        .animation(.spring(response: 0.38, dampingFraction: 0.8), value: isVisible)
-        .scaleEffect(state.isHoveringOnly ? (pulse ? 1.0 : 0.94) : 1.0)
-        .animation(
-            state.isHoveringOnly
-                ? .easeInOut(duration: 1.3).repeatForever(autoreverses: true)
-                : .default,
-            value: pulse
-        )
-        .onAppear { pulse = true }
+        .animation(.spring(response: 0.38, dampingFraction: 0.78), value: isVisible)
+        .animation(.linear(duration: 1.0 / 30.0), value: commitProgress)
+        .onReceive(clock) { tick in now = tick }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
+
+    @ViewBuilder
+    private var badgeCore: some View {
+        if #available(macOS 26, iOS 26, *) {
+            GlassEffectContainer(spacing: 16) {
+                icon
+                    .frame(width: isArmed ? 88 : 72, height: isArmed ? 88 : 72)
+                    .glassEffect(
+                        isArmed
+                            ? .regular.tint(.red.opacity(0.4)).interactive()
+                            : .regular.interactive(),
+                        in: Circle()
+                    )
+                    .glassEffectID("edgeDeleteBadge", in: glassNamespace)
+            }
+        } else {
+            icon
+                .frame(width: isArmed ? 88 : 72, height: isArmed ? 88 : 72)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+    }
+
+    @Namespace private var glassNamespace
+
+    private var icon: some View {
+        Image(systemName: isArmed ? "trash.fill" : "trash")
+            .font(.system(size: isArmed ? 26 : 22, weight: .semibold))
+            .foregroundStyle(.white)
+            .contentTransition(.symbolEffect(.replace))
+            .scaleEffect(isArmed ? 1.06 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isArmed)
+    }
 }
+
+
 
 // Progress Circle Overlay for Shrink-to-Vanish
 struct ProgressCircleOverlay: View {
